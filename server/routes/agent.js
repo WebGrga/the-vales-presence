@@ -1,4 +1,5 @@
 // Talking to the agent: say, answer a question, stop, its live status, a fresh conversation; and its settings.
+import { checkSettings } from '../settings-check.js';
 const ID = '([a-z0-9][a-z0-9_-]{0,79})';
 const P = (tail) => new RegExp(`^/api/projects/${ID}${tail}$`, 'i');
 const need = (ctx, what) => { if (!ctx[what]) throw Object.assign(new Error(`${what} is not available`), { status: 503 }); return ctx[what]; };
@@ -45,7 +46,9 @@ export default [
   } },
   { method: 'POST', path: '/api/agent/settings', handler: async (req, res, ctx) => {
     const a = need(ctx, 'agent');
-    const s = a.setSettings(await ctx.readJson(req));
+    const c = checkSettings(await ctx.readJson(req));
+    if (c.error) return ctx.send(res, 400, { error: c.error });
+    const s = a.setSettings(c.patch);
     ctx.broadcast({ type: 'settings', settings: s });
     ctx.send(res, 200, { settings: s, models: a.models(), efforts: a.efforts(), modes: a.modes() });
   } },

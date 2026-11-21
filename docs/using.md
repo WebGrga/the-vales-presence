@@ -23,7 +23,7 @@ This page walks through the screen in the order you meet it. Every name, button 
 
 ## The top bar and projects
 
-Left to right: the app name, the **project picker**, then the tabs **Edit**, **Shorts**, **Studio**, **Context**, **Export** and **Setup**, a **?** button (the keys, see [below](#keyboard-shortcuts)) and a small light that is green while the screen is connected to the server. Under it run the stage chips.
+Left to right: the app name, the **project picker**, then the tabs **Edit**, **Shorts**, **Studio**, **Context**, **Export**, **Setup** and **Settings**, a **?** button (the keys, see [below](#keyboard-shortcuts)) and a small light that is green while the screen is connected to the server. Under it run the stage chips.
 
 The address of the page is `#/<project>/<tab>`, so a link opens the same project and tab. The app remembers the last project you had open in this browser. While the agent waits for an answer of yours, the browser tab's title starts with `(!) Your answer`.
 
@@ -221,8 +221,10 @@ Everything here is made on your computer from the approved edit; nothing is uplo
 | **Subtitles (SRT)** | **Make subtitles** | the video's caption lines, or every spoken word in short lines with fillers left out |
 | **Edit list (FCPXML 1.10)** | **Make FCPXML** | the approved cut as a timeline, one clip per kept stretch, linked to your footage; no overlays |
 | **Edit list (OpenTimelineIO)** | **Make OTIO** | the same cut as an OpenTimelineIO timeline; no overlays |
+| **Chapters (YouTube)** | **Make chapters** | the timestamp lines for the video description (`0:00 Intro`, `1:15 ...`), shown on the card with a **Copy** button and saved as a `.chapters.txt` file. They come from `video/out/chapters.json` when the agent or you wrote one, else they are drafted from the spoken words (check the titles). YouTube shows chapters only with at least three, the first at 0:00, each 10 s or longer |
+| **MP4 copies of recordings** | **Make MP4 copies** | each recording in a container some editors do not import (.mkv and others) copied as .mp4 into `export/media/`, with no re-encode and every sound track kept. Make the copies first, then make FCPXML or OTIO again: they link the copies. Off when every recording is already .mp4 or .mov |
 
-A card is greyed out with a line saying what it needs while the file it is made from does not exist yet. Cut Shorts get their own cards under **Shorts (N)**.
+A card is greyed out with a line saying what it needs while the file it is made from does not exist yet. Cut Shorts get their own cards under **Shorts (N)** (video, subtitles and the edit lists).
 
 ## The Context tab
 
@@ -237,11 +239,22 @@ The Context tab shows what the agent reads at each stage, so you can change how 
 
 ## The Setup tab
 
-Setup lists everything the studio needs, each with a tick, a cross or a note: Node.js 22+, ffmpeg and ffprobe, Python 3 with numpy and Pillow, uv, the GPU and video encoder (optional), the Claude Code login, free disk space and Remotion. Each row says what was found; a cross or a note also says why it matters and shows the command that fixes it for your system with a **Copy** button, and sometimes a **More help** link. Press **Check again** after you fix something. The app opens on this tab by itself when a required check fails. More: [setup.md](setup.md).
+Setup lists everything the studio needs, each with a tick, a cross or a note: Node.js 22+, ffmpeg and ffprobe, Python 3 with numpy and Pillow, uv, the GPU and video encoder (optional), yt-dlp (optional: only the research stage needs it), the Claude Code login, free disk space and Remotion. Each row says what was found; a cross or a note also says why it matters and shows the command that fixes it for your system with a **Copy** button, and sometimes a **More help** link. Press **Check again** after you fix something. The app opens on this tab by itself when a required check fails. More: [setup.md](setup.md).
 
 ## Settings
 
-There is no settings screen. The settings (model, effort, permission mode and so on) are in `data/settings.json`. Every one is explained in [configuration.md](configuration.md#settings).
+The **Settings** tab holds the agent's settings. Each row has a control and a line that says what it changes and when it takes effect:
+
+| setting | control | what it changes |
+|---|---|---|
+| **Model** | choice | the Claude model every agent stage and chat uses |
+| **Effort** | choice | how hard the model thinks: Low, Medium, High, Extra high or Max. Higher is slower and uses more of your subscription |
+| **Permission mode** | choice | how the unattended agent may use tools: Auto, or Accept edits (a fixed list of tools) |
+| **Run stages on by themselves** | on / off | whether agent stages follow one another until one needs you, or you press **Go** on each |
+| **Renders at once** | number, 1 to 8 | how many render stages run at the same time across all projects |
+| **Report a quiet stage after** | number of minutes, 0 to 240 | how long a stage may show no output before you are told once that it may be stuck. 0 never reports |
+
+Change what you want and press **Save**. A line next to the button says "Saved" and when the change applies (model and effort the next time an open session is given work, the permission mode when a new session starts, the others at once), or says plainly why it was not saved, for example "heavy must be a whole number from 1 to 8", and keeps what you typed. **Undo my changes** returns every row to what is saved. A change you have not saved stays in the form when you switch tabs, and comes back after a reload. The settings are kept in `data/settings.json`, so editing that file does the same; every key, default and rule is in [configuration.md](configuration.md#settings).
 
 ## Keyboard shortcuts
 

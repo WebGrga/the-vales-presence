@@ -11,7 +11,8 @@ export const TABS = [
   { id: 'studio', dir: 'studio', label: 'Studio', icon: 'sparkle' },
   { id: 'context', dir: 'context', label: 'Context', icon: 'book' },
   { id: 'export', dir: 'export', label: 'Export', icon: 'export' },
-  { id: 'setup', dir: 'setup', label: 'Setup', icon: 'gear' },
+  { id: 'setup', dir: 'setup', label: 'Setup', icon: 'keep' },
+  { id: 'settings', dir: 'settings', label: 'Settings', icon: 'gear' },
 ];
 
 export function createTabs(bar, host, app) {

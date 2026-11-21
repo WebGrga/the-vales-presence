@@ -1,0 +1,32 @@
+/* The Settings tab (web/settings). Pixel chrome, readable body text; same cards as the Setup tab. */
+.settings { max-width: 860px; margin: 0 auto; padding: 20px 24px 40px; }
+.settings h2 { margin: 0; font-size: 26px; color: var(--tan); }
+.set-intro { margin: 8px 0 16px; font-size: 14px; }
+.set-rows { display: flex; flex-direction: column; gap: 8px; }
+.set-row {
+  padding: 12px 14px; background: var(--night);
+  border: var(--px) solid var(--outline); border-left: calc(var(--px) * 3) solid var(--dgrey);
+  box-shadow: inset var(--px) var(--px) 0 rgba(255, 255, 255, 0.05);
+  transition: background var(--ease), border-color var(--ease);
+}
+.set-row:hover { background: var(--dusk); }
+.set-row.is-changed { border-left-color: var(--orange); }
+.set-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.set-label { font-size: 16px; color: var(--cream); }
+.set-head select { min-width: 260px; max-width: 100%; }
+.set-num { display: inline-flex; align-items: center; gap: 8px; }
+.set-num input { width: 90px; }
+.set-toggle { display: inline-flex; align-items: center; gap: 8px; color: var(--lgrey); }
+.set-toggle input { width: 20px; height: 20px; accent-color: var(--yellow); cursor: pointer; }
+.set-help { margin: 6px 0 0; color: var(--lgrey); font-size: 13px; }
+.set-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+.set-status { margin: 0; font-size: 14px; color: var(--lgrey); min-height: 1.45em; }
+.set-status.is-ok { color: var(--lgreen); }
+.set-status.is-error { color: var(--lred); }
+.set-status.is-pending { color: var(--orange); }
+@media (max-width: 700px) {
+  .settings { padding: 12px 12px 24px; }
+  .set-head { flex-direction: column; align-items: stretch; gap: 8px; }
+  .set-head select { min-width: 0; width: 100%; }
+  .set-bar button { min-height: 38px; }
+}

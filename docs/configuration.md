@@ -21,13 +21,13 @@ The server listens on 127.0.0.1 only. Stop it with Ctrl+C in the terminal where 
 
 ## Settings
 
-The agent settings are in `data/settings.json`. There is no settings screen: edit the file with any text editor, or send them to the running server:
+The agent settings are in `data/settings.json`. The **Settings** tab of the app (see [using.md](using.md#settings)) changes every one of them and saves to that file; the file still works too, with any text editor, and so does the running server:
 
 ```bash
 curl -X POST http://localhost:4848/api/agent/settings -H "content-type: application/json" -d '{"effort":"high"}'
 ```
 
-`GET /api/agent/settings` shows the current values and the allowed ones. A key that is missing or invalid falls back to its default; unknown keys are left alone and ignored. The file is created the first time a setting is saved.
+`GET /api/agent/settings` shows the current values and the allowed ones. A key that is missing or invalid in the file falls back to its default; unknown keys in the file are left alone and ignored. A save through the server (the Settings tab or `POST`) is checked first: an unknown key or a value that is not allowed answers 400 with the reason and nothing is saved. The file is created the first time a setting is saved.
 
 | key | default | allowed | what it does |
 |---|---|---|---|
@@ -134,7 +134,7 @@ data/projects/<id>/
     remotion/          the overlay components for this project
   studio/              plan.md, script.md, research/, titles.json, thumbs/, upload.json, shorts/picks.json, shorts-review.json
   shorts/<id>/video/   a workshop for each cut Short
-  export/              what the Export tab made
+  export/              what the Export tab made: subtitles, edit lists, chapters, and media/ (the .mp4 copies of recordings)
   .presence/           locks.json, session.json (the agent's saved session), log.jsonl (the stage log), drafts.json (what you typed and did not send)
 ```
 
