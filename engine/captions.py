@@ -65,6 +65,17 @@ def font_path(style):
     return os.path.join(KIT, 'fonts', style['file'])
 
 
+# the bundled font a style falls back to when its own is not on this system (Arial Black is not on Linux)
+FALLBACK = {'font': 'Montserrat Black', 'file': 'Montserrat-Black.ttf'}
+
+
+def with_font(style):
+    """The style as given when its font file is found, else the style with the bundled fallback font."""
+    if os.path.isfile(font_path(style)):
+        return style
+    return {**style, **FALLBACK}
+
+
 def fonts_dir(cut):
     """A folder with the caption fonts (work/fonts), for libass's fontsdir: copies of the two caption fonts, wherever they were found."""
     import shutil
@@ -280,6 +291,7 @@ def build(doc):
         return None
     st = dict(DEFAULTS[doc['format']])
     st.update((doc.get('captions') or {}).get('style') or {})
+    st = with_font(st)
     if st.get('mode') == 'word':
         return build_word(doc, caps, st)
     return build_line(doc, caps, st)

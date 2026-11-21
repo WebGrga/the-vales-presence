@@ -54,7 +54,7 @@ class ShortCaptionTests(unittest.TestCase):
         d = short_doc()
         d['format'] = 'long'; d['width'] = 1920; d['height'] = 1080
         a = captions.build(d)
-        self.assertIn('Arial Black', a)
+        self.assertIn(captions.with_font(captions.DEFAULTS['long'])['font'], a)   # Arial Black, or the bundled font where it is missing
         self.assertEqual(a.count('Dialogue: 2,'), 0)
 
     def test_two_rows_when_too_wide(self):
@@ -86,7 +86,13 @@ class ShortCaptionTests(unittest.TestCase):
 
     def test_font_files_are_found(self):
         self.assertTrue(os.path.isfile(captions.font_path(captions.DEFAULTS['short'])))
-        self.assertTrue(os.path.isfile(captions.font_path(captions.DEFAULTS['long'])))
+        self.assertTrue(os.path.isfile(captions.font_path(captions.with_font(captions.DEFAULTS['long']))))
+
+    def test_a_missing_font_falls_back_to_the_bundled_one(self):
+        st = captions.with_font({**captions.DEFAULTS['long'], 'font': 'No Such Font', 'file': 'no-such-font.ttf'})
+        self.assertEqual(st['file'], 'Montserrat-Black.ttf')
+        self.assertTrue(os.path.isfile(captions.font_path(st)))
+        self.assertEqual(captions.with_font(captions.DEFAULTS['short']), captions.DEFAULTS['short'])
 
 
 class ShortCapsTests(unittest.TestCase):
