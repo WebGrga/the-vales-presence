@@ -17,7 +17,11 @@ export function mount(host, app) {
   function draw() {
     const list = only.checked ? all.filter((r) => ['failed', 'halted', 'stopped'].includes(r.outcome)) : all;
     head.querySelector('.dh-count').textContent = list.length ? `${list.length} entr${list.length === 1 ? 'y' : 'ies'}` : '';
-    if (!list.length) { body.replaceChildren(h('p.dim.dh-empty', only.checked ? 'No problems in the history.' : 'Nothing has run in this project yet. Each stage and chat turn will be listed here.')); return; }
+    if (!list.length) {
+      const ran = Object.values(app.project()?.stages || {}).some((s) => s.status === 'done' || s.ms > 0);
+      const none = ran ? 'This project has no run log: its stages ran before the history was kept. New runs will be listed here.' : 'Nothing has run in this project yet. Each stage and chat turn will be listed here.';
+      body.replaceChildren(h('p.dim.dh-empty', only.checked ? 'No problems in the history.' : none)); return;
+    }
     body.replaceChildren(...byDay(list).map((g) => h('section.dh-day',
       h('h3', h('span', dayWords(g.day)), h('span.dim', fmtCost(g.cost))),
       ...g.rows.map(row))));
