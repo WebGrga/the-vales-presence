@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import * as St from './stages.js';
 import { lockFiles, checkLocks, readLocks, writeLocks, needsCheck, lockSentence, gateOf, lockMessage, safeRel } from './locks.js';
-import { stagePrompt, answerPrompt } from './prompt.js';
+import { stagePrompt, answerPrompt, studioNote, STUDIO_STAGES } from './prompt.js';
 import { createCraft } from './craft.js';
 import { reviewSummary, readCuts, pendingChoices, workingFile, sendbackArchive, archivedName } from './cuts.js';
 import { keepExisting } from './stage-keep.js';
@@ -55,7 +55,7 @@ export function createRunner(ctx) {
   function promptFor(p, r, st, dir) {
     const i = St.indexOf(r, st.id);
     const kinds = craft.kinds();
-    const { skills, missing } = craft.skillsFor(r.id, st.id);
+    const { skills, missing } = craft.skillsFor(r.id, st.id, p.skillSet);
     const note = p.stages?.[st.id]?.note || '';
     const prev = r.stages[i - 1];
     const prevNote = prev ? p.stages?.[prev.id]?.note || '' : '';
@@ -226,7 +226,9 @@ export function createRunner(ctx) {
       runTurn(id, st, answerPrompt(text), started).catch((e) => ctx.log('stage', id, st.id, e?.stack || e));
       return { ok: true, resumed: st.id };
     }
-    return { ok: true, ...(await ag.say(id, String(text || ''), opts)) };
+    // a turn said at a Studio stage reads the Studio's skills of the project's set
+    const note = st && STUDIO_STAGES.includes(st.id) ? studioNote(craft.skillsFor(r.id, 'studio', p.skillSet).skills) : '';
+    return { ok: true, ...(await ag.say(id, String(text || '') + note, opts)) };
   }
 
   async function approve(id, { notes = '' } = {}) {

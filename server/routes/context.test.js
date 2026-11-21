@@ -29,7 +29,7 @@ test('GET the map and a node, POST a save that broadcasts', async (t) => {
   const f = fixture(); t.after(f.done);
   const map = await call(f, 'GET', '/api/context?project=p1');
   assert.equal(map.status, 200);
-  assert.deepEqual(map.body.columns.map((c) => c.id), ['ask', 'rough', 'rough-review', 'visuals']);
+  assert.deepEqual(map.body.columns.map((c) => c.id), ['ask', 'rough', 'rough-review', 'visuals', 'studio']);
   const node = await call(f, 'GET', '/api/context/node?id=brief&project=p1');
   assert.equal(node.body.node.text, 'A fake brief of six words.\n');
   const save = await call(f, 'POST', '/api/context/save', { id: 'brief', project: 'p1', text: 'new brief', baseMtime: node.body.node.mtime });

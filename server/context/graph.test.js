@@ -40,7 +40,7 @@ test("the user's version wins, and a copy equal to the shipped one is still 'shi
 test('the map: a column per stage, user stages without context, lines to shared things', (t) => {
   const f = fixture(); t.after(f.done);
   const m = buildMap(scan(f.o));
-  assert.deepEqual(m.columns.map((c) => [c.id, c.agent]), [['ask', true], ['rough', true], ['rough-review', false], ['visuals', true]]);
+  assert.deepEqual(m.columns.map((c) => [c.id, c.agent]), [['ask', true], ['rough', true], ['rough-review', false], ['visuals', true], ['studio', true]]);
   const rough = m.columns[1];
   assert.deepEqual(rough.skills.map((s) => [s.name, s.state]), [['alpha-skill', 'shipped'], ['gone-skill', 'missing']]);
   assert.deepEqual(rough.links.map((l) => `${l.how}:${l.to}`), ['reads:claude', 'reads:home', 'reads:rules', 'reads:brief', 'reads:stage:rough']);
@@ -48,8 +48,8 @@ test('the map: a column per stage, user stages without context, lines to shared 
   assert.deepEqual(m.columns[2].links, []);
   assert.deepEqual(m.shared, ['claude', 'home', 'rules', 'brief']);
   assert.deepEqual(m.nodes.brief.writes, ['ask']);
-  assert.deepEqual(m.nodes.brief.readers, ['rough', 'visuals']);
-  assert.deepEqual(m.nodes.claude.readers, ['ask', 'rough', 'visuals']);
+  assert.deepEqual(m.nodes.brief.readers, ['rough', 'visuals', 'studio']);
+  assert.deepEqual(m.nodes.claude.readers, ['ask', 'rough', 'visuals', 'studio']);
   assert.deepEqual(m.nodes['skill:beta-skill'].readers, ['visuals']);
   assert.deepEqual(m.library, ['skill:alpha-skill', 'skill:beta-skill']);
   assert.equal(m.lessons.length, 1);

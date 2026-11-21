@@ -52,3 +52,12 @@ const sep = (p) => (String(p).includes('\\') ? '\\' : '/');
 
 // The message that continues a stage that asked you something
 export const answerPrompt = (text) => `The user answers:\n\n${String(text || '').trim()}\n\nContinue the stage.`;
+
+// The stages the Studio page shows; a plain turn said while the project is at one of them also gets the Studio's skills
+export const STUDIO_STAGES = ['research', 'plan', 'plan-review', 'script', 'titles', 'thumbnails', 'feed', 'upload'];
+// pure: the line added to a plain turn so the agent knows which skills of the project's set apply (none = nothing added)
+export function studioNote(skills) {
+  if (!skills?.length) return '';
+  const list = skills.map((k) => `- ${k.name}: ${k.file}`).join('\n');
+  return `\n\n(Skills switched on for the Studio, read the ones that fit this request first:\n${list})`;
+}

@@ -7,6 +7,7 @@ import { h, icon, debounce } from '../shell/dom.js';
 import { ensureCss } from '../setup/first.js';
 import { span, previewFile, playWindow, counts } from './list.js';
 import { cutCard } from './cut-card.js';
+import { usesLine } from '../context/uses.js';
 
 export async function mount(el, app) {
   ensureCss(new URL('./shorts.css', import.meta.url));
@@ -22,7 +23,8 @@ export async function mount(el, app) {
   const fromBox = h('div.shorts-from');
   const grid = h('div.shorts-grid');
   const foot = h('div.shorts-foot');
-  root.append(head, fromBox, grid, foot);
+  const uses = usesLine(app, ['pick', 'cut', 'rough', 'visuals']); // the skills the project's set gives these stages
+  root.append(head, uses.el, fromBox, grid, foot);
 
   async function load() {
     try { data = await app.api(`/api/shorts/${id}`); } catch (e) { data = { shorts: [], counts: { all: 0 }, error: e.message }; }

@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { wordCount, frontmatter, SKILL_NAME } from './text.js';
+import { createSets } from './sets.js';
 
 const SAFE_ID = /^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$/;
 export const USER_KINDS = ['gate', 'record', 'options', 'upload', 'export']; // stages the user does, when stages.json does not say `who`
@@ -71,7 +72,7 @@ export function kindText(doc, kind) {
 export function project(P, id) {
   if (!id || !SAFE_ID.test(String(id))) return null;
   const dir = path.join(P.projects, String(id)), pj = readJson(path.join(dir, 'project.json'), null);
-  return pj ? { id: String(id), dir, title: String(pj.title || id), recipe: String(pj.recipe || ''), at: pj.at || null, stages: pj.stages || {} } : null;
+  return pj ? { id: String(id), dir, title: String(pj.title || id), recipe: String(pj.recipe || ''), skillSet: typeof pj.skillSet === 'string' ? pj.skillSet : null, at: pj.at || null, stages: pj.stages || {} } : null;
 }
 
 // one shipped-or-mine item: the shipped file, the user's file, which one the agent reads
@@ -132,10 +133,14 @@ export function scan(o) {
   }
 
   Object.assign(items, skills(P));
+  const sets = createSets({ ship: P.craft, dataDir: P.dataDir });
+  const setId = sets.resolve(proj?.skillSet), cur = sets.read(setId), used = sets.usage();
+  const skillSet = { id: setId, name: cur.name, builtin: cur.builtin, projects: used[setId] || 0, own: !!(proj?.skillSet && sets.read(proj.skillSet)), isDefault: setId === sets.defaultId() };
   return {
+    sets, skillSet, setList: sets.all().map((x) => ({ id: x.id, name: x.name, builtin: x.builtin, projects: used[x.id] || 0, isDefault: x.id === sets.defaultId() })),
     P, recipe, recipes: Object.values(all).map((r) => ({ id: r.id, name: r.name })), project: proj ? { id: proj.id, title: proj.title, recipe: proj.recipe, at: proj.at, stages: proj.stages } : null,
     shippedSkills: readJson(path.join(P.craft, 'stage-skills.json'), {}),
-    mineSkills: readJson(path.join(P.mine, 'stage-skills.json'), {}),
+    mineSkills: cur.lists,
     items,
   };
 }

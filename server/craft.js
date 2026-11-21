@@ -3,6 +3,8 @@
 // and CLAUDE.md. Read fresh on every call (small files), so edits in the context room count at the next stage.
 import fs from 'node:fs';
 import path from 'node:path';
+import { createSets } from './context/sets.js';
+import { skillsFor as pickFor } from './context/stage-skills.js';
 
 const readJson = (f, d) => { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch { return d; } };
 const readText = (f) => { try { return fs.readFileSync(f, 'utf8'); } catch { return null; } };
@@ -31,6 +33,7 @@ export function cleanRecipe(r, kinds) {
 
 export function createCraft({ root, dataDir }) {
   const ship = path.join(root, 'craft'), mine = path.join(dataDir, 'craft');
+  const sets = createSets({ ship, dataDir });
 
   function kinds() { return mergeMaps(readJson(path.join(ship, 'stages.json'), {}), readJson(path.join(mine, 'stages.json'), {})); }
 
@@ -45,7 +48,8 @@ export function createCraft({ root, dataDir }) {
   }
   const recipe = (id) => recipes()[id] || null;
 
-  function stageSkillMap() { return mergeMaps(readJson(path.join(ship, 'stage-skills.json'), {}), readJson(path.join(mine, 'stage-skills.json'), {})); }
+  // the lists of a skill set (a project's `skillSet`; none or gone = the user's default set): the shipped mapping with the set's own on top
+  function stageSkillMap(setId) { return sets.effective(sets.resolve(setId)); }
 
   // a skill's SKILL.md: the user's own first
   function skillFile(name) {
@@ -55,8 +59,8 @@ export function createCraft({ root, dataDir }) {
   }
 
   // the skills a stage reads: [{ name, file, about }] (a name with no SKILL.md is left out, with missing listed)
-  function skillsFor(recipeId, stageId) {
-    const names = pickSkills(stageSkillMap(), recipeId, stageId);
+  function skillsFor(recipeId, stageId, setId) {
+    const names = pickFor(sets.shippedLists(), sets.read(sets.resolve(setId))?.lists || {}, recipeId, stageId).skills.filter((n) => NAME.test(n));
     const skills = [], missing = [];
     for (const name of names) {
       const file = skillFile(name);
@@ -70,7 +74,7 @@ export function createCraft({ root, dataDir }) {
   const houseRules = () => firstText(path.join(mine, 'house-rules.md'), path.join(ship, 'house-rules.md'));
   const claudeMd = () => firstText(path.join(mine, 'CLAUDE.md'), path.join(ship, 'CLAUDE.md'));
 
-  return { kinds, recipes, recipe, stageSkillMap, skillFile, skillsFor, houseRules, claudeMd, ship, mine };
+  return { kinds, recipes, recipe, sets, stageSkillMap, skillFile, skillsFor, houseRules, claudeMd, ship, mine };
 }
 
 // pure: a skill's description from its frontmatter, else its first line of text

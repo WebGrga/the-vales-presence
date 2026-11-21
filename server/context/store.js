@@ -8,6 +8,7 @@ import { scan, shown, readJson } from './scan.js';
 import { checkText, newSkillText, wordCount } from './text.js';
 import { toggle, resetStage, dropSkill } from './stage-skills.js';
 import { bump } from './lessons.js';
+import { editSet, hasStage } from './set-store.js';
 
 const day = (t) => new Date(t).toLocaleDateString('sv-SE'); // YYYY-MM-DD, local
 
@@ -71,7 +72,10 @@ export function resetNode(o, { id }) {
   fs.rmSync(it.mine);
   try { fs.rmdirSync(path.dirname(it.mine)); } catch {} // a skill folder left empty
   if (!it.shipped && it.kind === 'skill') { // the user's own skill is removed: it comes off their stage lists too
-    writeJson(path.join(s.P.mine, 'stage-skills.json'), dropSkill(s.mineSkills, it.name));
+    for (const x of s.sets.all().filter((y) => !y.builtin)) { // it comes off every set
+      const next = dropSkill(x.lists, it.name);
+      if (JSON.stringify(next) !== JSON.stringify(x.lists)) s.sets.save(x.id, next);
+    }
   }
   clearDraft(s.P, draftKey(id, s.project?.id));
   return { ok: true, removed: !it.shipped };
@@ -83,40 +87,34 @@ export function newSkill(o, { name, description, text, stage }) {
   if (r.error) return r;
   const s = scan(o);
   if (s.items['skill:' + r.name]) return { error: `there is already a skill called ${r.name}` };
-  if (stage && !(s.recipe?.stages || []).some((x) => x.id === stage)) return { error: 'that stage is not in this recipe' };
+  if (stage && !hasStage(s.recipe, stage)) return { error: 'that stage is not in this recipe' };
   const file = path.join(s.P.mine, 'skills', r.name, 'SKILL.md');
   try {
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, r.text, { flag: 'wx' });
   } catch (e) { return { error: 'the skill could not be made: ' + e.message }; }
-  if (stage) writeJson(path.join(s.P.mine, 'stage-skills.json'), toggle(s.shippedSkills, s.mineSkills, s.recipe.id, stage, r.name, true));
+  let forked = null;
+  if (stage) { const e = editSet(o, s, (l) => toggle(s.shippedSkills, l, s.recipe.id, stage, r.name, true)); if (e.error) return e; forked = e.forked; }
   clearDraft(s.P, NEW_SKILL);
-  return { ok: true, id: 'skill:' + r.name };
+  return { ok: true, id: 'skill:' + r.name, forked };
 }
 
-// POST toggle: one skill on or off for one stage of the open recipe
+// POST toggle: one skill on or off for one stage of the open recipe (or the Studio's turns), in the set the project uses
 export function toggleSkill(o, { stage, skill, on }) {
   const s = scan(o);
   if (!s.recipe) return { error: 'there is no recipe to change' };
-  if (!s.recipe.stages.some((x) => x.id === stage)) return { error: 'that stage is not in this recipe' };
+  if (!hasStage(s.recipe, stage)) return { error: 'that stage is not in this recipe' };
   const name = String(skill ?? '');
   if (on && !s.items['skill:' + name]) return { error: `there is no skill called ${name}` };
-  const f = path.join(s.P.mine, 'stage-skills.json');
-  const no = backup(s.P, f, o.now?.());
-  if (no) return { error: no };
-  writeJson(f, toggle(s.shippedSkills, s.mineSkills, s.recipe.id, stage, name, !!on));
-  return { ok: true };
+  return editSet(o, s, (l) => toggle(s.shippedSkills, l, s.recipe.id, stage, name, !!on));
 }
 
 // POST reset a stage's skills to the shipped list
 export function resetStageSkills(o, { stage }) {
   const s = scan(o);
-  if (!s.recipe?.stages.some((x) => x.id === stage)) return { error: 'that stage is not in this recipe' };
-  const f = path.join(s.P.mine, 'stage-skills.json');
-  const no = backup(s.P, f, o.now?.());
-  if (no) return { error: no };
-  writeJson(f, resetStage(s.mineSkills, s.recipe.id, stage));
-  return { ok: true };
+  if (!hasStage(s.recipe, stage)) return { error: 'that stage is not in this recipe' };
+  if (s.skillSet.builtin) return { error: 'this stage already has its shipped skills' };
+  return editSet(o, s, (l) => resetStage(l, s.recipe.id, stage));
 }
 
 // POST a lesson held up (kept) or was wrong (against): the book is written to the user's copy

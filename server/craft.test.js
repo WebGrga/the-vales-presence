@@ -50,8 +50,13 @@ test('createCraft reads data/craft over craft/', () => {
   assert.equal(c.houseRules().text, 'shipped rules');
   w('data/craft/house-rules.md', 'my rules');
   assert.equal(c.houseRules().text, 'my rules');
-  w('data/craft/stage-skills.json', JSON.stringify({ m: ['s1'] }));
-  assert.deepEqual(c.skillsFor('r', 'm').skills.map((x) => x.name), ['s1']);
+  // the old single override file is migrated into the set "My set" on first read, and still counts
+  w('data2/craft/stage-skills.json', JSON.stringify({ m: ['s1'] }));
+  const c2 = createCraft({ root, dataDir: path.join(root, 'data2') });
+  assert.deepEqual(c2.skillsFor('r', 'm').skills.map((x) => x.name), ['s1']);
+  assert.deepEqual(c2.sets.all().map((x) => x.name), ['Default', 'My set']);
+  assert.equal(c2.sets.defaultId(), 'my-set');
+  assert.deepEqual(c.skillsFor('r', 'm').skills.map((x) => x.name), ['s1', 's2']); // another data folder: untouched
 });
 
 test('the stage prompt has every part it should', () => {

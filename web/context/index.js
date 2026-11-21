@@ -5,6 +5,8 @@
 import { h, icon } from '../shell/dom.js';
 import { KIND, stateBadge, words, addable, lines, linePath, lessonCounts } from './view.js';
 import { createPanel } from './panel.js';
+import { setsBar } from './sets-bar.js';
+import { listView } from './list-view.js';
 
 const RECIPE_KEY = 'presence.context.recipe';
 
@@ -39,13 +41,18 @@ export function mount(el, app) {
   const canvas = h('div.cx-canvas', svg, cols, shared);
   const mapEl = h('div.cx-map', canvas, lessons, library);
   const side = h('aside.cx-side');
-  const body = h('div.cx-body', mapEl, side);
-  el.append(h('div.cx', bar, body));
+  const lister = listView({ panel: { open: (id) => panel.open(id), stage: (id) => panel.stage(id) }, getMap: () => st.map });
+  const body = h('div.cx-body', mapEl, lister.el, side);
+  const head = h('div.cx-head', bar);
+  el.append(h('div.cx', head, body));
 
   const panel = createPanel(side, app, {
     map: () => st.map, query: q, reload: () => load(),
     opened: (id) => { st.open = id; mark(); },
   });
+
+  const sets = setsBar({ app, ctx: panel.ctx, host: panel.ctx.host, onView: (v) => { mapEl.hidden = v === 'list'; lister.el.hidden = v !== 'list'; try { localStorage.setItem('presence.context.view', v); } catch {} if (v === 'list') lister.draw(); else requestAnimationFrame(drawLines); } });
+  head.append(sets.el);
 
   // ---------------------------------------------------------------- load and draw
   async function load() {
@@ -54,6 +61,8 @@ export function mount(el, app) {
     st.map = m;
     if (!st.recipe) st.recipe = m.recipe?.id || null;
     draw();
+    sets.draw(m);
+    lister.draw();
     panel.refresh();
     openAsked();
   }
@@ -200,6 +209,7 @@ export function mount(el, app) {
   ro.observe(canvas);
 
   // ---------------------------------------------------------------- live
+  try { const v = localStorage.getItem('presence.context.view'); if (v === 'list') sets.setView('list'); } catch {}
   try { st.recipe = app.project()?.recipe || localStorage.getItem(RECIPE_KEY) || null; } catch {}
   app.on('open-context', () => openAsked());
   app.on('context', () => load());

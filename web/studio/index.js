@@ -9,6 +9,7 @@ import { thumbsSection } from './thumbs.js';
 import { feedSection } from './feed.js';
 import { uploadSection } from './upload.js';
 import { flushNotes } from './cards.js';
+import { usesLine } from '../context/uses.js';
 
 const PAGES = [
   { id: 'plan', label: 'Plan', icon: 'book', make: (c) => textSection(c, 'plan') },
@@ -34,7 +35,8 @@ export function mount(el, app) {
   const nav = h('nav.st-nav');
   const strip = h('div.st-strip', { hidden: true });
   const body = h('div.st-body');
-  const root = h('div.studio', h('div.st-top', nav, strip), body);
+  const uses = usesLine(app, ['studio']); // which skills the project's set gives the Studio's turns
+  const root = h('div.studio', h('div.st-top', nav, strip), uses.el, body);
   el.replaceChildren(root);
 
   let id = null, pages = [], data = null, current = localStorage.getItem('presence.studio.page') || 'plan', timer = null, offs = [];
@@ -119,6 +121,7 @@ export function mount(el, app) {
     if (next === id) { paintStrip(); return; }
     flush();
     id = next;
+    uses.load();
     build();
     paintStrip();
     load();

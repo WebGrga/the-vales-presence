@@ -6,6 +6,8 @@ import { h, icon, debounce } from '../shell/dom.js';
 import { KIND, stateBadge, writersWords, readersWords, words, startText, lessonCounts } from './view.js';
 import { stageView, newSkillForm } from './forms.js';
 
+import { nameForm, download } from './set-panels.js';
+
 const LS = 'presence.context.';
 const countWords = (t) => (String(t || '').match(/\S+/g) || []).length;
 
@@ -74,6 +76,10 @@ export function createPanel(side, app, host) {
     ];
     const acts = [];
     if (n.canReset) acts.push(twoStep('Reset to default', 'Click again: your version goes (a backup is kept)', () => reset(n)));
+    if (n.kind === 'skill') {
+      acts.push(h('button.small.calm', { type: 'button', title: 'Copy this skill under a new name; the original stays', on: { click: () => duplicate(n) } }, icon('plus', true), h('span', 'Duplicate')));
+      acts.push(h('button.small.calm', { type: 'button', title: 'Save this skill as one file to share', on: { click: () => exportSkill(n) } }, icon('export', true), h('span', 'Export')));
+    }
     if (n.canRemove) acts.push(twoStep('Remove this skill', 'Click again to remove it (a backup is kept)', () => reset(n)));
 
     side.replaceChildren(h('div.cx-panel',
@@ -172,9 +178,19 @@ export function createPanel(side, app, host) {
     try { await post('/api/context/lesson', { lesson: l.id, field }); } catch (e) { app.toast(e.message, 'error'); }
   }
 
+  function duplicate(n) {
+    if (cur?.dirty) { app.toast('Save or discard your changes first, so the copy has your text.', 'warn'); return; }
+    nameForm(ctx, { title: 'Duplicate skill', label: 'Name of the copy', value: (n.name || n.label) + '-copy', verb: 'Make the copy', intro: `A new skill of your own, copied from ${n.label}. ${n.label} stays as it is.`,
+      go: async (name) => { const r = await post('/api/context/skill-duplicate', { skill: n.name || n.label, name }); app.toast('Copy made.', 'ok'); open(r.id); } });
+  }
+  async function exportSkill(n) {
+    try { const r = await app.api(`/api/context/export?kind=skill&id=${encodeURIComponent(n.name || n.label)}&${host.query()}`); download(`${r.name}.presence-skill.json`, r.bundle); app.toast('Skill exported.', 'ok'); } catch (e) { app.toast(e.message, 'error'); }
+  }
+
   async function toggle(stage, skill, on) {
-    try { await post('/api/context/toggle', { stage, skill, on }); } catch (e) { app.toast(e.message, 'error'); host.reload(); return; }
-    app.toast(`${skill} ${on ? 'on' : 'off'} for ${host.map()?.columns.find((c) => c.id === stage)?.title || stage}.`, 'ok');
+    let r;
+    try { r = await post('/api/context/toggle', { stage, skill, on }); } catch (e) { app.toast(e.message, 'error'); host.reload(); return; }
+    app.toast(`${skill} ${on ? 'on' : 'off'} for ${host.map()?.columns.find((c) => c.id === stage)?.title || stage}.${r?.forked ? ` The shipped set is never changed, so this went into a new set, ${r.forked.name}.` : ''}`, 'ok');
   }
 
   // ---------------------------------------------------------------- the map changed
@@ -194,5 +210,5 @@ export function createPanel(side, app, host) {
   async function newSkill(stageId) { if (cur?.dirty) toServer.flush(); await newSkillForm(ctx, stageId); }
 
   empty();
-  return { open, stage, newSkill, toggle, refresh, close() { toServer.flush(); } };
+  return { ctx, open, stage, newSkill, toggle, refresh, close() { toServer.flush(); } };
 }

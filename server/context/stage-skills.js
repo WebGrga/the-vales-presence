@@ -7,7 +7,7 @@
 
 const isObj = (d) => d && typeof d === 'object' && !Array.isArray(d);
 // the lists of a doc (an older nested { stages: {...} } is read too)
-const listOf = (doc) => {
+export const listOf = (doc) => {
   const src = isObj(doc?.stages) ? doc.stages : isObj(doc) ? doc : {};
   return Object.fromEntries(Object.entries(src).filter(([, v]) => Array.isArray(v)));
 };
