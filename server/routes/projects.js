@@ -27,11 +27,7 @@ export default [
   } },
   { method: 'POST', path: '/api/projects', handler: async (req, res, ctx) => {
     const b = await ctx.readJson(req);
-    ctx.send(res, 200, need(ctx, 'projects').create({ title: b.title, recipe: b.recipe, id: b.id }));
-  } },
-  { method: 'GET', path: '/api/recipes', handler: async (req, res, ctx) => {
-    const recipes = Object.values(need(ctx, 'projects').recipes()).map((r) => ({ id: r.id, name: r.name, about: r.about || '', stages: r.stages }));
-    ctx.send(res, 200, { recipes, kinds: ctx.projects.craft.kinds() });
+    ctx.send(res, 200, need(ctx, 'projects').create({ title: b.title, recipe: b.recipe, id: b.id, topic: b.topic }));
   } },
   // project.json, plus recipeDef (the recipe's stages) and view (the stage bar) for the screen
   { method: 'GET', path: P(), handler: async (req, res, ctx) => {
@@ -68,12 +64,12 @@ export default [
     const r = applyDraft(readDrafts(ctx.projectDir(id)), b.key, b.text);
     if (r.error) return ctx.send(res, 400, r);
     writeJsonAtomic(draftsFile(ctx.projectDir(id)), r.drafts);
-// pin and last-opened (the Projects home), kept in the project's own .presence/meta.json
-function homeMeta(dir) { try { const m = JSON.parse(fs.readFileSync(path.join(dir, '.presence', 'meta.json'), 'utf8')); return { pinned: !!m.pinned, opened: m.opened || null }; } catch { return { pinned: false, opened: null }; } }
-
     ctx.send(res, 200, { ok: true });
   } },
 ];
+
+// pin and last-opened (the Projects home), kept in the project's own .presence/meta.json
+function homeMeta(dir) { try { const m = JSON.parse(fs.readFileSync(path.join(dir, '.presence', 'meta.json'), 'utf8')); return { pinned: !!m.pinned, opened: m.opened || null }; } catch { return { pinned: false, opened: null }; } }
 
 const draftsFile = (dir) => path.join(dir, '.presence', 'drafts.json');
 function readDrafts(dir) { try { return JSON.parse(fs.readFileSync(draftsFile(dir), 'utf8')) || {}; } catch { return {}; } }

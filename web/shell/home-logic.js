@@ -22,6 +22,22 @@ export function statusOf(p) {
 }
 export const statusWords = (p) => STATUS[statusOf(p)].label;
 
+// The words on a card's badge: the stage the project stands on and what it is doing, "Rough cut: working" (never just "Ready").
+// -> { label, tone, state }  (tone is the colour; state is statusOf)
+export function badgeOf(p) {
+  const state = statusOf(p), v = p?.view || {};
+  const chips = v.chips || [];
+  const cur = chips.find((c) => c.now) || chips.find((c) => c.id === (v.at || p?.at)) || null;
+  const name = cur?.title || '';
+  const tone = STATUS[state].tone;
+  if (state === 'finished') return { label: 'Finished', tone, state };
+  if (!name) return { label: STATUS[state].label, tone, state };
+  const fresh = chips[0] === cur && !cur.ms && !chips.some((c) => c.status === 'done');
+  const word = { stopped: 'stopped', working: 'working', queued: 'in line', waiting: 'waiting for you' }[state]
+    || (cur.who === 'you' ? 'waiting for you' : fresh ? 'ready to start' : 'press Go');
+  return { label: `${name}: ${word}`, tone: word === 'waiting for you' ? 'ask' : tone, state };
+}
+
 const time = (s) => { const t = Date.parse(s); return Number.isFinite(t) ? t : 0; };
 // the last time the project was opened or changed (ms)
 export const touched = (p) => Math.max(time(p?.opened), time(p?.updated), time(p?.created));
@@ -45,13 +61,17 @@ export function filterProjects(list, { q = '', recipe = '' } = {}, recipeName = 
     return words.every((w) => hay.includes(w));
   });
 }
-// the Pinned row (all pinned, in name order) and the Recent row (opened projects that are not pinned, newest first, at most n)
-export function rows(list, n = 5) {
-  const pinned = list.filter((p) => p.pinned).sort(byName);
-  const recent = list.filter((p) => !p.pinned && p.opened).sort((a, b) => time(b.opened) - time(a.opened)).slice(0, n);
-  return { pinned, recent };
+// one list in two groups, each project once: the pinned ones first, then the rest, both in the order they came in
+export function split(list) {
+  return { pinned: list.filter((p) => p.pinned), rest: list.filter((p) => !p.pinned) };
 }
 
+// pure: the first letters of a title ("Trip to Rome" -> "TR"), up to two, from words that start with a letter or a digit
+export function initials(title) {
+  const w = String(title || '').split(/[^\p{L}\p{N}]+/u).filter(Boolean).filter((x) => !/^(a|an|the|to|of|my)$/i.test(x));
+  const pick = (w.length ? w : String(title || '').split(/\s+/).filter(Boolean)).slice(0, 2).map((x) => [...x][0]).join('');
+  return (pick || '?').toUpperCase();
+}
 // "just now", "5 min ago", "3 h ago", "2 days ago", then a date
 export function ago(iso, now = Date.now()) {
   const t = time(iso);

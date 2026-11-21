@@ -4,6 +4,7 @@
 // A missing module, or one that throws, shows "coming soon". Each mount gets its own app whose on() listeners are
 // dropped at the next mount.
 import { h, icon } from './dom.js';
+import { tabsFor, stageTab, currentStage } from './recipe-tabs.js';
 
 export const TABS = [
   { id: 'edit', dir: 'editor', label: 'Edit', icon: 'scissors' },
@@ -26,6 +27,21 @@ export function createTabs(bar, host, app) {
     host.append(el);
     state[t.id] = { el, mounted: undefined, handle: null, offs: [] };
   }
+
+  // the tabs the recipe uses stay; the others are hidden (the one you are on never is). The tab the current stage wants gets a mark.
+  function paintTabs() {
+    const p = app.project(), r = p?.recipeDef || null;
+    const use = tabsFor(r);
+    const want = r ? stageTab(currentStage(p, r)) : null;
+    for (const b of bar.querySelectorAll('.tab')) {
+      const id = b.dataset.tab;
+      b.hidden = !!use && !use.has(id) && id !== shown;
+      b.classList.toggle('wants', !!want && id === want && id !== shown && !!currentStage(p, r));
+      b.title = id === want && id !== shown && currentStage(p, r) ? `${TABS.find((x) => x.id === id).label}: the ${currentStage(p, r).title || currentStage(p, r).id} stage works here` : TABS.find((x) => x.id === id).label;
+    }
+  }
+  app.on('project', () => setTimeout(paintTabs, 0));
+  app.on('project-view', () => paintTabs());
 
   async function mountTab(t) {
     const s = state[t.id];
@@ -59,12 +75,17 @@ export function createTabs(bar, host, app) {
     const s = state[t.id], pid = app.project()?.id ?? null;
     if (s.mounted === undefined || s.mounted !== pid) mountTab(t);
     app.emit('tab', { type: 'tab', tab: t.id });
+    paintTabs();
     app.route();
   }
 
   return {
     show,
     get shown() { return shown; },
-    projectChanged() { if (shown) { const t = TABS.find((x) => x.id === shown); mountTab(t); } },
+    projectChanged() {
+      // the tab you were on is not one this project's recipe uses: go to Edit instead
+      const use = tabsFor(app.project()?.recipeDef);
+      if (shown && use && !use.has(shown)) return show('edit');
+      if (shown) { const t = TABS.find((x) => x.id === shown); mountTab(t); } paintTabs(); },
   };
 }

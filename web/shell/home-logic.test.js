@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { statusOf, sortProjects, filterProjects, rows, ago, sameTitle } from './home-logic.js';
+import { statusOf, badgeOf, sortProjects, filterProjects, split, initials, ago, sameTitle } from './home-logic.js';
 
 const P = (id, o = {}) => ({ id, title: id, recipe: 'edit', created: '2026-01-01T00:00:00Z', ...o });
 
@@ -30,11 +30,25 @@ test('search needs every word; the recipe filter is exact', () => {
   assert.equal(filterProjects(l, {}).length, 3);
 });
 
-test('Pinned shows all pinned; Recent shows opened ones that are not pinned', () => {
-  const l = [P('a', { pinned: true, opened: '2026-03-01T00:00:00Z' }), P('b', { opened: '2026-03-02T00:00:00Z' }), P('c', { opened: '2026-03-03T00:00:00Z' }), P('d')];
-  const r = rows(l, 1);
-  assert.deepEqual(r.pinned.map((p) => p.id), ['a']);
-  assert.deepEqual(r.recent.map((p) => p.id), ['c']);
+test('every project is in one group only: pinned first, then the rest', () => {
+  const l = [P('a', { pinned: true }), P('b'), P('c', { pinned: true }), P('d')];
+  const r = split(l);
+  assert.deepEqual(r.pinned.map((p) => p.id), ['a', 'c']);
+  assert.deepEqual(r.rest.map((p) => p.id), ['b', 'd']);
+});
+
+test('the badge names the stage and what it is doing', () => {
+  const chips = (now, extra = {}) => [{ id: 'ask', title: 'Brief', who: 'agent', status: 'todo', ms: 0, now: now === 0, ...extra }, { id: 'rough-review', title: 'Rough review', who: 'you', status: 'todo', ms: 0, now: now === 1 }];
+  const v = (o, n = 0, x) => P('a', { view: { chips: chips(n, x), ...o } });
+  assert.equal(badgeOf(v({})).label, 'Brief: ready to start');
+  assert.equal(badgeOf(v({ running: {} })).label, 'Brief: working');
+  assert.equal(badgeOf(v({ waiting: { for: 'answer' } })).label, 'Brief: waiting for you');
+  assert.equal(badgeOf(v({ waiting: { for: 'approve' } }, 1)).label, 'Rough review: waiting for you');
+  assert.equal(badgeOf(v({ queued: {} })).label, 'Brief: in line');
+  assert.equal(badgeOf(v({ halted: 'x' })).label, 'Brief: stopped');
+  assert.equal(badgeOf(v({ done: true })).label, 'Finished');
+  assert.equal(badgeOf(P('a')).label, 'Ready');
+  assert.equal(badgeOf(v({}, 0, { status: 'todo', ms: 5000 })).label, 'Brief: press Go');
 });
 
 test('times in plain words, and the same-name warning', () => {
@@ -49,4 +63,12 @@ test('times in plain words, and the same-name warning', () => {
   assert.equal(sameTitle([P('a', { title: 'My Video' })], '  my   video ')?.id, 'a');
   assert.equal(sameTitle([P('a', { title: 'My Video' })], 'my video', 'a'), null);
   assert.equal(sameTitle([P('a', { title: 'x' })], ''), null);
+});
+
+test('a placeholder poster shows the first letters of the title', () => {
+  assert.equal(initials('Trip to Rome'), 'TR');
+  assert.equal(initials('qol-new bulk 27'), 'QN');
+  assert.equal(initials('Ünder the sea'), 'ÜS');
+  assert.equal(initials('Kitchen'), 'K');
+  assert.equal(initials('  '), '?');
 });

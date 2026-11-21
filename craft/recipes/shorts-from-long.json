@@ -3,6 +3,7 @@
   "name": "Shorts from a long video",
   "about": "You have a long video. The agent picks the moments that stand alone, you choose which to make, it cuts each as a 9:16 Short, you review them, and you export.",
   "format": "short",
+  "card": {"icon":"phone","bring":"A long video, or its recordings.","you":"Keep or drop each moment the agent picked, approve the cut Shorts, export.","agent":"Finds the moments that stand alone, then cuts each one you kept as a 9:16 Short.","start":{"tab":"shorts","hint":"Next: add the long video in the Edit tab's media bin, then press Go.","tabNoFootage":"edit","withFootage":{"hint":"Next: your video is going in. When it is there, press Go and the agent picks the moments."}}},
   "stages": [
     { "id": "pick", "kind": "make", "title": "Pick moments", "out": ["studio/shorts/picks.json"],
       "focus": "Find the moments of the long video that work alone as Shorts (a hook in the first two seconds, one idea, a payoff, 20 to 60 s). The source is video/out/rough.mp4 when there is one (its words are video/out/rough-words.json: use them, never transcribe again; a project made from an edit has both linked in), else video/out/final.mp4, else the footage (transcribe it once if no word file exists). Times in the picks are seconds on that source. Write studio/shorts/picks.json: { \"picks\": [ { \"id\": \"s1\", \"src\": \"rough, a source key of the edit list, or a file relative to video/\", \"from\": seconds, \"to\": seconds, \"title\": \"...\", \"hook\": \"the first line\", \"why\": \"...\" } ] }, five to ten picks, best first." },

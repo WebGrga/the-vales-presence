@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { initStages, normalize } from './stages.js';
 import { createCraft } from './craft.js';
+import { topicText, TOPIC_FILE } from './project-brief.js';
 
 export const FOLDERS = ['video/footage', 'video/out', 'studio', '.presence'];
 
@@ -76,7 +77,7 @@ export function createProjects(ctx) {
     const next = fn(p) || p;
     return save(next);
   }
-  function create({ title, recipe, id } = {}) {
+  function create({ title, recipe, id, topic } = {}) {
     const r = craft.recipe(String(recipe || ''));
     if (!r) throw Object.assign(new Error(`no recipe "${recipe}"`), { status: 400 });
     if (!String(title || '').trim()) throw Object.assign(new Error('a project needs a title'), { status: 400 });
@@ -85,6 +86,8 @@ export function createProjects(ctx) {
     const pid = uniqueId(id ? slugify(id) : slugify(title), taken);
     const d = dir(pid);
     for (const f of FOLDERS) fs.mkdirSync(path.join(d, ...f.split('/')), { recursive: true });
+    const idea = topicText(topic);
+    if (idea) fs.writeFileSync(path.join(d, ...TOPIC_FILE), idea);
     return save(newProject({ id: pid, title: String(title).trim(), recipe: r }));
   }
   // one line in .presence/log.jsonl

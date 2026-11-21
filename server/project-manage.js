@@ -51,6 +51,7 @@ export function createManage(ctx, projects) {
     const to = dir(pid), from = dir(id);
     for (const f of ['video/footage', 'video/out', 'studio', '.presence']) fs.mkdirSync(path.join(to, ...f.split('/')), { recursive: true });
     try { fs.copyFileSync(path.join(from, 'brief.md'), path.join(to, 'brief.md')); } catch {}
+    try { fs.copyFileSync(path.join(from, '.presence', 'topic.md'), path.join(to, '.presence', 'topic.md')); } catch {}
     let how = 'none', n = 0;
     if (footage !== 'none') {
       let names = []; try { names = fs.readdirSync(path.join(from, 'video', 'footage')).filter((x) => !x.startsWith('.') && !x.endsWith('.part')); } catch {}

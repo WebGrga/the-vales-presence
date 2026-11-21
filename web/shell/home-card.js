@@ -1,29 +1,33 @@
 // One project card of the Projects home, and the menu (right-click or the ⋯ button).
-// card(p, ctx) -> element; ctx: { recipeName(id), current, selecting, selected: Set, size(id), open(id), toggle(id), menu(p, x, y), pin(p) }
+// card(p, ctx) -> element; ctx: { recipeName(id), recipeIcon(id), current, selecting, selected: Set, size(id), open(id), toggle(id), menu(p, x, y), pin(p) }
+// No poster yet: a placeholder with the recipe's icon and the first letters of the title, in one of six calm colours picked from the id.
 import { h, icon } from './dom.js';
-import { STATUS, statusOf, ago } from './home-logic.js';
+import { badgeOf, ago, initials } from './home-logic.js';
 import { bytesWords } from './home-actions.js';
 
 const enc = encodeURIComponent;
 // changed after it was opened (or made), by more than a minute
 const changedLater = (p) => { const base = Date.parse(p.opened || p.created), up = Date.parse(p.updated); return Number.isFinite(up) && (!Number.isFinite(base) || up - base > 60000); };
 
-export function card(p, c, compact = false) {
-  const st = statusOf(p), words = STATUS[st];
+const hue = (id) => { let n = 0; for (const ch of String(id)) n = (n * 31 + ch.charCodeAt(0)) >>> 0; return n % 6; };
+
+export function card(p, c) {
+  const words = badgeOf(p);
   const poster = h('div.home-poster');
+  const holder = h('div.home-ph.ph-' + hue(p.id), icon(c.recipeIcon(p.recipe)), h('span.home-ph-l', initials(p.title || p.id)));
   const img = h('img', { src: `/api/projects/${enc(p.id)}/poster?v=${enc(p.updated || '')}`, alt: '', loading: 'lazy', draggable: false });
-  img.addEventListener('error', () => { img.remove(); poster.classList.add('none'); poster.append(icon('film')); });
-  poster.append(img, h('span.home-badge.' + words.tone, words.label));
+  img.addEventListener('error', () => { img.remove(); });
+  poster.append(holder, img, h('span.home-badge.' + words.tone, { title: words.label }, words.label));
   const sz = c.size(p.id);
   const sel = c.selected.has(p.id);
   const pinBtn = h('button.icon-only.home-pin' + (p.pinned ? '.on' : ''), { type: 'button', title: p.pinned ? 'Unpin' : 'Pin to the top', 'aria-label': p.pinned ? 'Unpin' : 'Pin', 'aria-pressed': String(!!p.pinned), on: { click: (e) => { e.stopPropagation(); c.pin(p); } } }, icon('flag', true));
   const more = h('button.icon-only.home-more', { type: 'button', title: 'More', 'aria-label': 'More: ' + (p.title || p.id), on: { click: (e) => { e.stopPropagation(); const r = e.currentTarget.getBoundingClientRect(); c.menu(p, r.left, r.bottom + 2); } } }, '⋯');
-  const meta = compact ? [] : [
+  const meta = [
     h('div.home-line', c.recipeName(p.recipe)),
     h('div.home-line.dim', p.opened ? `Opened ${ago(p.opened)}` : `Made ${ago(p.created) || 'earlier'}`, changedLater(p) ? ` · changed ${ago(p.updated)}` : ''),
     h('div.home-line.dim.home-size', sz ? bytesWords(sz.total) + (sz.freeable ? ` (${bytesWords(sz.freeable)} can be freed)` : '') : ' '),
   ];
-  const el = h('article.home-card' + (c.current === p.id ? '.current' : '') + (sel ? '.selected' : '') + (compact ? '.compact' : ''), { tabindex: '0', role: 'button', 'data-id': p.id, 'aria-label': `${p.title || p.id}, ${words.label}` },
+  const el = h('article.home-card' + (c.current === p.id ? '.current' : '') + (sel ? '.selected' : ''), { tabindex: '0', role: 'button', 'data-id': p.id, 'aria-label': `${p.title || p.id}, ${words.label}` },
     c.selecting ? h('span.home-check', { 'aria-hidden': 'true' }, sel ? '✓' : '') : null, poster,
     h('div.home-body', h('div.home-title', h('b', { title: p.title || p.id }, p.title || p.id), pinBtn, more), ...meta));
   const act = () => (c.selecting ? c.toggle(p.id) : c.open(p.id));

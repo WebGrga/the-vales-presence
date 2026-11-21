@@ -63,7 +63,7 @@ export function createRunner(ctx) {
     const active = St.activeLocks(readLocks(dir), r, st.id);
     return stagePrompt({
       recipe: r, stage: st, index: i, kind: kinds[st.kind], projectDir: dir, root: ctx.root, skills, missing,
-      houseRules: craft.houseRules().text, houseRulesFile: path.join(ctx.dataDir, 'craft', 'house-rules.md'), houseRulesShipped: path.join(ctx.root, 'craft', 'house-rules.md'), brief: readText(path.join(dir, 'brief.md')),
+      houseRules: craft.houseRules().text, houseRulesFile: path.join(ctx.dataDir, 'craft', 'house-rules.md'), houseRulesShipped: path.join(ctx.root, 'craft', 'house-rules.md'), brief: readText(path.join(dir, 'brief.md')), topic: readText(path.join(dir, '.presence', 'topic.md')),
       sentBack: note.startsWith('Sent back: ') ? note.slice(11) : '', approved: prevNote.startsWith('Approved: ') ? prevNote.slice(10) : '',
       lock: lockSentence(active), footage: footage(dir), source: p.from ? { project: p.from.project, title: p.from.title, files: p.from.files } : null,
     });

@@ -1,7 +1,8 @@
 // The Vale's Presence: the page's boot. The shell (top bar, project picker, stage bar, tabs) and the `app` every tab gets:
 //   app = { api(path, body?), on(type, fn) -> off, project(), select(id), toast(text, kind?), media(path) -> url }
 // plus, for the shell's own parts: emit, hooks (the editor's notes for a send-back), route.
-// The address is #/<project>/<tab>; the last project is remembered in this browser.
+// The address is #/<project>/<tab>[/<sub>] (the sub is the page inside a tab, such as the Studio's Titles: app.sub);
+// the last project is remembered in this browser.
 import { api, createSocket, mediaUrl } from './shell/api.js';
 import { toast } from './shell/toast.js';
 import { h, icon } from './shell/dom.js';
@@ -11,6 +12,7 @@ import { mountStageBar } from './shell/stagebar.js';
 import { createTabs, TABS } from './shell/tabs.js';
 import { needsSetup } from './setup/first.js';
 import { createWaiting, pageTitle } from './shell/waiting.js';
+import { mountHint } from './shell/next-hint.js';
 import { toggleKeys, keysOpen, closeKeys } from './shell/keys-help.js';
 import { comboOf, ownsKeys } from './editor/keys.js';
 
@@ -23,15 +25,23 @@ const app = {
   on: (type, fn) => sock.on(type, fn),
   emit: (type, msg) => sock.emit(type, msg),
   project: () => current,
-  select: (id) => selectProject(id),
+  select: (id, tab) => selectProject(id, tab),
   toast: (text, kind) => toast(text, kind),
   media: (rel) => mediaUrl(current?.id, rel),
   hooks: {},
+  // the page inside a tab (the Studio's Titles): kept in the address. get(tab) -> name | undefined; set(tab, name)
+  sub: {
+    get: (tab) => subs[tab],
+    set: (tab, name) => { if (subs[tab] === name) return; subs[tab] = name; app.route(); },
+  },
   route: () => {
-    const want = `#/${current ? encodeURIComponent(current.id) : '-'}/${tabs?.shown || 'edit'}`;
+    const tab = tabs?.shown || 'edit';
+    const want = `#/${current ? encodeURIComponent(current.id) : '-'}/${tab}${subs[tab] ? '/' + subs[tab] : ''}`;
     if (location.hash !== want) history.replaceState(null, '', want);
   },
 };
+const subs = {};
+const HASH = /^#\/([^/]*)\/?([a-z]*)(?:\/([a-z0-9-]+))?/;
 window.presence = app; // for the console
 app.waiting = createWaiting(app);
 
@@ -68,6 +78,7 @@ const keysBtn = h('button.calm.icon-only.keys-btn', { type: 'button', title: 'Ke
 top.append(brand, pickEl, h('div.grow'), tabBar, keysBtn, live);
 app.home = mountHome(document.getElementById('rooms'), app);
 app.openTab = (id) => { app.home.close(); tabs.show(id); };
+app.hint = mountHint(document.getElementById('stagebar'), app);
 const picker = mountPicker(pickEl, app);
 mountStageBar(document.getElementById('stagebar'), app);
 const tabs = createTabs(tabBar, document.getElementById('rooms'), app);
@@ -121,7 +132,8 @@ addEventListener('keydown', (e) => {
 }, true);
 
 async function boot() {
-  const [, pid, tab] = (location.hash.match(/^#\/([^/]*)\/?([a-z]*)/) || []);
+  const [, pid, tab, sub] = (location.hash.match(HASH) || []);
+  if (tab && sub) subs[tab] = sub;
   // only a project you chose opens: the one in the address, or the one you had open last time; otherwise the Projects home
   let id = pid && pid !== '-' ? decodeURIComponent(pid) : null;
   if (!id) { try { id = localStorage.getItem(LAST); } catch {} }
@@ -134,9 +146,10 @@ async function boot() {
   }
 }
 addEventListener('hashchange', () => {
-  const [, pid, tab] = (location.hash.match(/^#\/([^/]*)\/?([a-z]*)/) || []);
+  const [, pid, tab, sub] = (location.hash.match(HASH) || []);
   const id = pid && pid !== '-' ? decodeURIComponent(pid) : null;
   if (tab === 'home') return;
+  if (tab && sub && subs[tab] !== sub) { subs[tab] = sub; app.emit('sub', { type: 'sub', tab, sub }); }
   if (id && id !== current?.id) selectProject(id, tab || tabs.shown);
   else if (tab && tab !== tabs.shown) tabs.show(tab);
 });

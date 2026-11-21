@@ -5,7 +5,7 @@
 const section = (title, body) => (String(body || '').trim() ? `## ${title}\n\n${String(body).trim()}\n` : '');
 
 // a: { recipe, stage, index, kind: { title, instruction }, projectDir, root, skills: [{name, file, about}], missing,
-//      houseRules, brief, sentBack (notes), approved (notes from the gate before), lock (the lock sentence), footage: [names] }
+//      houseRules, brief, topic (the idea typed at creation), sentBack (notes), approved (notes from the gate before), lock (the lock sentence), footage: [names] }
 export function stagePrompt(a) {
   const { recipe, stage } = a;
   const n = recipe.stages.length;
@@ -35,6 +35,7 @@ export function stagePrompt(a) {
     a.houseRulesFile ? `The user's house rules file: ${a.houseRulesFile}${a.houseRulesShipped ? ` (when it does not exist yet, copy ${a.houseRulesShipped} there first, then write lessons in your copy; never edit the shipped one)` : ''}.` : '',
     a.houseRules,
   ].filter(Boolean).join('\n\n')));
+  out.push(section('What the user wants this to be about (typed when the project was made: build on it)', a.topic));
   out.push(section('The brief (brief.md)', a.brief));
   if (a.approved) out.push(section('Notes the user left when approving the stage before', a.approved));
   if (a.lock) out.push(section('Locked', a.lock));

@@ -1,20 +1,15 @@
 // The Projects home: the page that opens first, and from the tower and the project name in the top bar.
-// New project, Pinned and Recent rows, every project as a card (poster, title, recipe, status, times, size), search, sort,
-// a recipe filter, select several to send to the Bin, and the Bin. The decisions are in home-logic.js; the form in home-new.js.
+// New project (recipe cards, topic, footage), every project once as a card (poster, title, recipe, a badge that names the
+// stage and what it is doing, times, size) with the pinned ones first, search, sort, a recipe filter, select several to
+// send to the Bin, and the Bin. The decisions are in home-logic.js; the form in home-new.js.
 //   mountHome(host, app) -> { open(), close(), isOpen(), refresh() }
 import { h, icon, debounce } from './dom.js';
-import { SORTS, sortProjects, filterProjects, rows } from './home-logic.js';
+import { SORTS, sortProjects, filterProjects, split } from './home-logic.js';
 import { card, showMenu } from './home-card.js';
 import { newProjectForm } from './home-new.js';
 import { binSection } from './home-bin.js';
 import * as A from './home-actions.js';
 
-const FALLBACK_RECIPES = [
-  { id: 'edit', name: 'Edit a video', about: 'Footage in, a finished edit out: rough cut, your review, visuals, export.' },
-  { id: 'video', name: 'A video from the idea', about: 'Research, plan, record, edit, titles, thumbnails and upload.' },
-  { id: 'short', name: 'Edit a Short', about: 'Like Edit a video, in 9:16.' },
-  { id: 'shorts-from-long', name: 'Shorts from a long video', about: 'The agent picks the moments, you keep or drop each, it cuts the ones you kept.' },
-];
 const LS = 'presence.home';
 
 export function mountHome(host, app) {
@@ -24,11 +19,11 @@ export function mountHome(host, app) {
   const view = Object.assign({ sort: 'recent', recipe: '', q: '' }, (() => { try { return JSON.parse(localStorage.getItem(LS)) || {}; } catch { return {}; } })(), { q: '' });
   let selecting = false; const selected = new Set();
   const recipeName = (id) => recipes.find((r) => r.id === id)?.name || id;
+  const recipeIcon = (id) => recipes.find((r) => r.id === id)?.icon || 'film';
   const save = () => { try { localStorage.setItem(LS, JSON.stringify({ sort: view.sort, recipe: view.recipe })); } catch {} };
 
   const bin = binSection(app, { onChange: (id) => { load(); if (id) app.toast('Back in your projects.', 'ok'); } });
-  const grid = h('div.home-grid');
-  const rowsEl = h('div.home-rows');
+  const groups = h('div.home-groups');
   const selbar = h('div.home-selbar', { hidden: true });
   const search = h('input', { type: 'text', placeholder: 'Search projects', 'aria-label': 'Search projects' });
   const sortSel = h('select', { 'aria-label': 'Sort' }, ...SORTS.map(([v, t]) => h('option', { value: v }, 'Sort: ' + t)));
@@ -43,14 +38,14 @@ export function mountHome(host, app) {
   el.append(h('div.home-inner',
     h('div.home-head', h('h2.display', 'Projects'), h('div.grow'), back),
     newWrap,
-    h('div.home-tools', search, recSel, sortSel, selBtn, importBtn, fileIn), selbar, status, rowsEl, grid, bin.el));
+    h('div.home-tools', search, recSel, sortSel, selBtn, importBtn, fileIn), selbar, status, groups, bin.el));
 
   search.addEventListener('input', debounce(() => { view.q = search.value; paint(); }, 120));
   sortSel.addEventListener('change', () => { view.sort = sortSel.value; save(); paint(); });
   recSel.addEventListener('change', () => { view.recipe = recSel.value; save(); paint(); });
 
   const ctx = () => ({
-    recipeName, current: app.project()?.id, selecting, selected, size: (id) => sizes[id], open: (id) => pick(id), pin: (p) => A.pin(app, p, load),
+    recipeName, recipeIcon, current: app.project()?.id, selecting, selected, size: (id) => sizes[id], open: (id) => pick(id), pin: (p) => A.pin(app, p, load),
     toggle: (id) => { selected.has(id) ? selected.delete(id) : selected.add(id); paint(); },
     menu: (p, x, y) => showMenu([
       { label: 'Open', run: () => pick(p.id) }, { label: p.pinned ? 'Unpin' : 'Pin to the top', run: () => A.pin(app, p, load) }, { line: true },
@@ -72,11 +67,11 @@ export function mountHome(host, app) {
     recSel.replaceChildren(h('option', { value: '' }, 'All recipes'), ...recipes.map((r) => h('option', { value: r.id }, r.name)));
     recSel.value = view.recipe; sortSel.value = view.sort;
     selBtn.textContent = selecting ? 'Done selecting' : 'Select'; selBtn.classList.toggle('on', selecting);
-    const filtering = !!(view.q.trim() || view.recipe);
     const shown = sortProjects(filterProjects(list, view, recipeName), view.sort, recipeName);
-    const { pinned, recent } = filtering ? { pinned: [], recent: [] } : rows(list);
-    rowsEl.replaceChildren(...[['Pinned', pinned], ['Recent', recent]].filter(([, l]) => l.length).map(([t, l]) => h('div.home-row', h('h3', t), h('div.home-strip', ...l.map((p) => card(p, c, true))))));
-    grid.replaceChildren(...shown.map((p) => card(p, c)));
+    // one calm layout: each project once, the pinned ones first under their own heading, every card the same size
+    const { pinned, rest } = split(shown);
+    groups.replaceChildren(...[['Pinned', pinned], [pinned.length ? 'Everything else' : '', rest]].filter(([, l]) => l.length)
+      .map(([t, l]) => h('div.home-group', t ? h('h3', t) : null, h('div.home-grid', ...l.map((p) => card(p, c))))));
     status.textContent = err ? '' : !loaded ? 'Reading the projects…' : !list.length ? 'No projects yet. Name your first one above.' : !shown.length ? 'No project matches. Clear the search or the recipe filter.' : '';
     status.hidden = !status.textContent;
     selbar.hidden = !selecting;
@@ -90,11 +85,28 @@ export function mountHome(host, app) {
 
   async function load() {
     try { const r = await app.api('/api/projects'); list = Array.isArray(r) ? r : r?.projects || []; err = null; } catch (e) { err = e.message; }
-    if (!recipes.length) { try { const r = await app.api('/api/recipes'); recipes = r?.recipes || []; } catch {} if (!recipes.length) recipes = FALLBACK_RECIPES; }
+    if (!recipes.length) await loadRecipes();
     loaded = true;
-    if (!form) { form = newProjectForm({ app, recipes, projects: () => list, onOpen: (id) => pick(id), onCreated: (id, t) => { if (id) { pick(id); app.toast(`Started “${t}”. Drop your footage into the media bin.`, 'ok'); } else load(); } }); newWrap.append(h('h3', 'New project'), form.el); }
+    if (!form && recipes.length) {
+      form = newProjectForm({ app, recipes, projects: () => list, onOpen: (id) => pick(id), onRecipes: () => loadRecipes().then(() => { form.update(recipes); paint(); }), onCreated: started });
+      // the box can be folded away once you have projects to look at; it stays folded in this browser
+      const fold = h('button.calm.small', { type: 'button', 'aria-expanded': 'true', on: { click: () => setFolded(form.el.hidden === false) } });
+      const setFolded = (f) => { form.el.hidden = f; fold.textContent = f ? 'Show' : 'Hide'; fold.setAttribute('aria-expanded', String(!f)); try { localStorage.setItem(LS + '.folded', f ? '1' : ''); } catch {} };
+      newWrap.append(h('div.home-newhead', h('h3', 'New project'), fold), form.el);
+      setFolded(!!list.length && (() => { try { return !!localStorage.getItem(LS + '.folded'); } catch { return false; } })());
+    }
     paint();
     app.api('/api/projects/sizes').then((r) => { sizes = r?.sizes || {}; if (!el.hidden) paint(); }).catch(() => {});
+  }
+
+  async function loadRecipes() { try { const r = await app.api('/api/recipes'); recipes = r?.recipes || []; } catch (e) { err = err || e.message; } }
+  // a project was made: the page opens on the tab its recipe starts on, with the one-line "Next: ..." under the stage bar
+  async function started(id, title, start) {
+    if (!id) return load();
+    close();
+    await app.select(id, start.tab);
+    app.hint?.(start.hint);
+    load();
   }
 
   function open() {

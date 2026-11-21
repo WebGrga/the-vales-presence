@@ -3,6 +3,7 @@
   "name": "Edit a video",
   "about": "You have footage of a long-form video (16:9). The agent cuts the rough, you approve and lock the talk, it dresses it with overlays and captions, checks it, and you export.",
   "format": "long",
+  "card": {"icon":"scissors","bring":"A recording of a long video (16:9), or several.","you":"Tell the agent what you want, watch the rough cut and keep or restore its cuts, approve, check the final, export.","agent":"Cuts the dead air and retakes, adds overlays, zooms and captions, then checks its own work.","start":{"tab":"edit","hint":"Next: drop your recordings into the media bin, then press Go.","withFootage":{"hint":"Next: your footage is going in. When it is there, press Go and the agent asks what you want from the edit."}}},
   "stages": [
     { "id": "ask", "kind": "ask", "title": "Brief", "out": ["brief.md"],
       "focus": "This is a long-form edit (1920x1080). Ask about the length they want, what must stay, what can go, and the look of overlays and captions." },

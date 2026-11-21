@@ -39,7 +39,7 @@ export function mount(el, app) {
   const root = h('div.studio', h('div.st-top', nav, strip), uses.el, body);
   el.replaceChildren(root);
 
-  let id = null, pages = [], data = null, current = localStorage.getItem('presence.studio.page') || 'plan', timer = null, offs = [];
+  let id = null, pages = [], data = null, current = app.sub?.get('studio') || localStorage.getItem('presence.studio.page') || 'plan', timer = null, offs = [];
 
   const ctx = {
     get id() { return id; },
@@ -57,6 +57,7 @@ export function mount(el, app) {
   function show(p) {
     current = PAGES.some((x) => x.id === p) ? p : 'plan';
     localStorage.setItem('presence.studio.page', current);
+    app.sub?.set('studio', current); // the address names the page: a reload or a shared link lands here
     for (const b of nav.children) b.classList.toggle('on', b.dataset.page === current);
     for (const pg of pages) pg.el.hidden = pg.id !== current;
   }
@@ -138,6 +139,7 @@ export function mount(el, app) {
     }),
     app.on('project', () => { if (!id) select(); else paintStrip(); }),
     app.on('select', () => select()),
+    app.on('sub', (m) => { if (m?.tab === 'studio' && m.sub && m.sub !== current && pages.length) show(m.sub); }),
     app.on('tab', (m) => { if (m?.tab === 'studio') { select(); load(); } }),
     app.on('files', (m) => { if ((m.paths || []).some((p) => String(p).replace(/\\/g, '/').includes('studio/'))) ctx.reload(); }),
   ].filter((f) => typeof f === 'function');

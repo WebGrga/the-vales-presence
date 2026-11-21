@@ -3,6 +3,7 @@
   "name": "Edit a Short",
   "about": "You have footage for one vertical Short (9:16). Like Edit a video, at 1080x1920, with captions in the Shorts style.",
   "format": "short",
+  "card": {"icon":"phone","bring":"A recording for a vertical video (9:16).","you":"Tell the agent what you want, watch the rough cut and keep or restore its cuts, approve, check the final, export.","agent":"Cuts the rough, adds captions and visuals in 9:16, then checks its own work.","start":{"tab":"edit","hint":"Next: drop your recording into the media bin, then press Go.","withFootage":{"hint":"Next: your footage is going in. When it is there, press Go and the agent asks what you want from the Short."}}},
   "stages": [
     { "id": "ask", "kind": "ask", "title": "Brief", "out": ["brief.md"],
       "focus": "This is a Short (1080x1920, usually under 60 s). Ask about the hook, the length, and what the viewer must take away." },
