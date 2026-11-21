@@ -2,16 +2,21 @@
 // edit the words (the original stays), add your own, leave a note for the agent.
 import { h } from '../shell/dom.js';
 import { titleLength } from './format.js';
-import { actions, noteBox, optionOp, hiddenToggle, empty } from './cards.js';
+import { actions, noteBox, optionOp, hiddenToggle, empty, promiseLine } from './cards.js';
+import { selectionBar } from './mix.js';
+import { premiseList } from './premise.js';
 import { keepDraft, takeDraft, dropDraft } from './persist.js';
 
 export function titlesSection(ctx) {
   const list = h('div.st-titles');
+  const lines = h('div.st-lines-box');
+  let data = null;
+  const sel = selectionBar(ctx, 'titles', () => ({ doc: data?.titles, titles: data?.titles }));
   const addBox = h('input.st-add', { type: 'text', placeholder: 'Write your own title and press Enter', maxlength: 100, 'aria-label': 'Your own title' });
   const head = h('header.st-head', h('h2', 'Titles'), h('span.dim.st-count'), h('span.st-grow'),
     h('span.dim', 'Pick one · star the ones to test in the feed'));
-  const el = h('section.st-pane', head, list, h('div.st-addrow', addBox, h('button.small', { type: 'button', on: { click: add } }, 'Add')));
-  let showHidden = false, data = null;
+  const el = h('section.st-pane', head, lines, sel.el, list, h('div.st-addrow', addBox, h('button.small', { type: 'button', on: { click: add } }, 'Add')));
+  let showHidden = false;
 
   const d = takeDraft(ctx.id, 'titles.add');
   if (d?.value) addBox.value = d.value;
@@ -43,10 +48,13 @@ export function titlesSection(ctx) {
     const meta = h('div.st-meta',
       o.family ? h('span.st-tag', o.family) : null,
       o.by === 'you' ? h('span.st-tag.you', 'yours') : null,
-      o.original ? h('span.dim', { title: 'The agent wrote' }, `was: ${o.original}`) : null);
+      o.original ? h('span.dim', { title: 'The agent wrote' }, `was: ${o.original}`) : null,
+      Number.isFinite(o.score) ? h('span.st-tag', { title: 'How the premise scored as text among real winners' + (Number.isFinite(doc.gate) ? `; the gate was ${doc.gate}` : '') }, `score ${o.score}`) : null);
     return h('article.st-card.st-title' + (doc.picked === o.id ? '.picked' : '') + (o.hidden ? '.hidden' : ''), { 'data-id': o.id },
       h('div.st-title-row', words, lenEl),
       meta,
+      o.premise ? h('p.st-why', h('b', 'Premise: '), o.premise) : null,
+      promiseLine(o),
       o.why ? h('p.st-why', o.why) : null,
       h('div.st-cardfoot', actions(ctx, 'titles', doc, o), noteBox(ctx, 'titles', doc, o)));
   }
@@ -56,6 +64,8 @@ export function titlesSection(ctx) {
     const doc = dt.titles;
     const vis = doc.options.filter((o) => !o.hidden), hid = doc.options.filter((o) => o.hidden);
     head.querySelector('.st-count').textContent = vis.length ? `${vis.length} option${vis.length === 1 ? '' : 's'}` : '';
+    lines.replaceChildren(premiseList(doc) || '');
+    sel.update();
     list.replaceChildren(
       ...(vis.length ? vis.map((o) => card(doc, o)) : [empty('No titles yet. The agent writes them at the Titles stage (skill title-options) into studio/titles.json. You can add your own below.',
         h('button.small', { type: 'button', on: { click: () => ctx.say('Write title options for this video now (skill title-options), into studio/titles.json.') } }, 'Ask the agent for titles'))]),

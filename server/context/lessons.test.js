@@ -26,10 +26,12 @@ test('lessons are the top-level items of the Lessons section, with date, evidenc
   assert.deepEqual(parseLessons('# nothing'), []);
 });
 
-test('the shipped starter book has no lessons yet', async () => {
+test('the shipped starter book has its packaging lessons, none counted yet', async () => {
   const fs = await import('node:fs');
   const md = fs.readFileSync(new URL('../../craft/house-rules.md', import.meta.url), 'utf8');
-  assert.deepEqual(parseLessons(md), []);
+  const l = parseLessons(md);
+  assert.ok(l.length >= 8 && l.length <= 20);
+  assert.ok(l.every((x) => x.kept === 0 && x.against === 0 && x.date === '2026-11-21'));
   for (const h of ['## How we cut', '## Tools we use', '## Lessons']) assert.ok(md.includes(h), h);
 });
 

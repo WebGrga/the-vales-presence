@@ -64,3 +64,13 @@ test('choices over a missing file and no choices', () => {
   assert.deepEqual(withChoices(null, null, 'titles').options, []);
   assert.equal(withChoices(titles, null, 'titles').options.length, 2);
 });
+
+test('the gate, the judged lines and each option\'s premise, promise and score are kept', () => {
+  const d = parseOptions({ gate: '7.5', lines: [{ premise: 'p', title: 'T', score: 8.24, clear: true }, { title: 'U', score: 3, clear: false, failed: 'unclear' }, { score: 2 }], options: [{ id: 't1', title: 'T', premise: 'p', promise: 'you see it happen', score: 8.24 }] }, 'titles');
+  assert.equal(d.gate, 7.5);
+  assert.deepEqual(d.lines.map((l) => [l.title, l.score, l.clear]), [['T', 8.2, undefined], ['U', 3, false]]);
+  assert.deepEqual([d.options[0].promise, d.options[0].score], ['you see it happen', 8.2]);
+  const t = parseOptions({ options: [{ id: 'a', file: 'a.png', promise: 'x', sheet160: 'ok' }] }, 'thumbs');
+  assert.deepEqual([t.options[0].promise, t.options[0].sheet160], ['x', 'ok']);
+  assert.equal(t.lines, undefined);
+});

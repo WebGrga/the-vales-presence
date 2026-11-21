@@ -6,7 +6,7 @@
   "short/visuals": ["visuals-overlays", "shorts-reframe-captions", "cut-punch-in", "cut-frame-screen"],
   "shorts-from-long/pick": ["shorts-pick-moments", "cut-fit-length"],
   "shorts-from-long/cut": ["shorts-reframe-captions", "cut-dialogue-pass", "cut-fit-length", "visuals-overlays", "cut-frame-screen"],
-  "studio": ["research-titles", "research-thumbnails", "title-options", "thumbnail-options", "upload-youtube", "plan-video", "script-video"],
+  "studio": ["research-titles", "research-thumbnails", "title-options", "thumbnail-options", "judge-package", "upload-youtube", "plan-video", "script-video"],
   "video/research": ["research-titles", "research-thumbnails"],
   "video/plan": ["plan-video", "script-video"],
   "video/titles": ["title-options", "upload-youtube"],

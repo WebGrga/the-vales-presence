@@ -14,15 +14,28 @@ function cleanOption(x, kind, i) {
   if (kind === 'titles') {
     o.title = str(x.title, 200);
     if (!o.title) return null;
-    for (const k of ['family', 'why', 'by', 'original']) if (str(x[k])) o[k] = str(x[k], 1000);
+    for (const k of ['family', 'why', 'by', 'original', 'premise', 'promise']) if (str(x[k])) o[k] = str(x[k], 1000);
+    if (Number.isFinite(Number(x.score)) && x.score !== null && x.score !== '') o.score = Math.round(Number(x.score) * 10) / 10;
   } else {
     o.file = safeFile(x.file);
     if (!o.file) return null;
     o.how = HOW.includes(x.how) ? x.how : 'code';
-    for (const k of ['title', 'model', 'prompt', 'spec', 'why', 'text']) if (str(x[k])) o[k] = str(x[k], 2000);
+    for (const k of ['title', 'model', 'prompt', 'spec', 'why', 'text', 'promise', 'sheet160', 'clarity']) if (str(x[k])) o[k] = str(x[k], 2000);
   }
   if (x.hidden === true) o.hidden = true;
   return o;
+}
+
+// the premise + title lines the Titles stage judged as text: [{ premise, title, score, clear, failed }]
+export function cleanLines(list) {
+  return (Array.isArray(list) ? list : []).slice(0, 80).map((l) => {
+    if (!l || typeof l !== 'object' || !str(l.title, 200)) return null;
+    const o = { title: str(l.title, 200), premise: str(l.premise, 300) };
+    if (l.score !== undefined && l.score !== null && l.score !== '' && Number.isFinite(Number(l.score))) o.score = Math.round(Number(l.score) * 10) / 10;
+    if (l.clear === false) o.clear = false;
+    if (str(l.failed, 300)) o.failed = str(l.failed, 300);
+    return o;
+  }).filter(Boolean);
 }
 
 export function parseOptions(obj, kind) {
@@ -37,6 +50,10 @@ export function parseOptions(obj, kind) {
   if (src.notes && typeof src.notes === 'object') for (const [k, v] of Object.entries(src.notes)) if (ids.has(k) && str(v)) notes[k] = str(v, 4000);
   const out = { options, picked, shortlist: [...new Set(shortlist)], notes };
   for (const k of ['about', 'brief']) if (str(src[k])) out[k] = str(src[k], 4000);
+  if (kind === 'titles') {
+    if (src.gate !== undefined && src.gate !== null && src.gate !== '' && Number.isFinite(Number(src.gate))) out.gate = Math.round(Number(src.gate) * 10) / 10;
+    out.lines = cleanLines(src.lines);
+  }
   return out;
 }
 

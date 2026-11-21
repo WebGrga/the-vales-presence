@@ -1,19 +1,30 @@
 // What title and thumbnail cards share: star, pick, hide, and a note saved as you type.
 import { h } from '../shell/dom.js';
 import { keepDraft, takeDraft, settleDraft, saver } from './persist.js';
+import { moreButton, selectButton } from './mix.js';
+
+// the packaging pages' own styles (promise line, mix and compare, marks, judge, bet), loaded once beside studio.css
+if (typeof document !== 'undefined' && !document.querySelector('link[data-studio="./package.css"]')) document.head.append(h('link', { rel: 'stylesheet', href: new URL('./package.css', import.meta.url).href, 'data-studio': './package.css' }));
 
 export function optionOp(ctx, kind, op, id, text) {
   return ctx.api(`/api/studio/${ctx.id}/options`, { kind, op, id, text }).then((r) => { ctx.reload(); return r; }).catch((e) => ctx.toast(e.message || String(e), 'error'));
 }
 
-export function actions(ctx, kind, doc, o) {
+export function actions(ctx, kind, doc, o, titleOf) {
   const starred = doc.shortlist.includes(o.id), picked = doc.picked === o.id;
   const star = h('button.small' + (starred ? '.on' : '.calm'), { type: 'button', title: starred ? 'Take it out of the feed test' : 'Put it in the feed test', on: { click: () => optionOp(ctx, kind, 'star', o.id) } }, starred ? '★ In the feed' : '☆ To the feed');
   const pick = h('button.small' + (picked ? '.go' : ''), { type: 'button', title: picked ? 'Your pick (click to unpick)' : 'Pick this one', on: { click: () => optionOp(ctx, kind, picked ? 'unpick' : 'pick', o.id) } }, picked ? '✓ Picked' : 'Pick');
   const hide = o.hidden
     ? h('button.small.calm', { type: 'button', on: { click: () => optionOp(ctx, kind, 'show', o.id) } }, 'Bring back')
     : h('button.small.calm', { type: 'button', title: 'Hide it (the file stays)', on: { click: () => optionOp(ctx, kind, 'hide', o.id) } }, 'Hide');
-  return h('div.st-acts', pick, o.hidden ? null : star, hide);
+  return h('div.st-acts', pick, o.hidden ? null : star, o.hidden ? null : moreButton(ctx, kind, o, titleOf), o.hidden ? null : selectButton(ctx, kind, o), hide);
+}
+
+// every option says what the viewer will see happen: the agent writes it; when it did not, the card says so
+export function promiseLine(o) {
+  return o.promise
+    ? h('p.st-promise', h('b', 'The promise: '), o.promise)
+    : h('p.st-promise.none', h('b', 'The promise: '), 'not written yet. Ask the agent to add it (what the viewer will see happen).');
 }
 
 // a note on one option: the draft is kept at once, sent after a pause

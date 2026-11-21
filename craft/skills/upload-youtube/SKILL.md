@@ -31,6 +31,10 @@ Keep every field already there (the user may have typed in the Studio); change o
 
 The title and thumbnail are the user's picks in the Studio (`studio/titles.json` `picked`, `studio/thumbs/options.json` `picked`); don't change them here.
 
+## The bet
+
+Also write `studio/bet.json` if it is missing, a bet the user can change on the Feed page: `{"metric": "ctr", "direction": "above", "median": "", "note": "one line: why this package should move it"}`. Metric is one of `ctr` (impressions click-through), `views48` (views in the first 48 hours), `retention` (average view duration) or `subs`; direction `above` or `below` the user's own median for that metric. The Studio shows the bet a week after the upload, with a place to write the result. `median` is the user's own usual number for that metric: leave it empty for the user to write; never invent it.
+
 ## Then
 
 Tell the user in one or two lines what to check on the Upload page (the package, the description, the visibility), and that **Dry run** shows every request without sending anything.

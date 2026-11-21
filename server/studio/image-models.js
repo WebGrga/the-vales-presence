@@ -11,7 +11,7 @@ export function loadModels(base, overlay) {
   return [...byId.values()].map((m) => ({
     id: str(m.id, 60), name: str(m.name, 120) || str(m.id, 60), kind: m.kind === 'api' ? 'api' : 'local',
     enabled: m.enabled === true, command: m.command, env: Array.isArray(m.env) ? m.env.map((e) => str(e, 80)).filter(Boolean) : [],
-    about: str(m.about, 600), price: str(m.price, 200), needs: str(m.needs, 300),
+    about: str(m.about, 600), price: str(m.price, 200), time: str(m.time, 200), needs: str(m.needs, 300),
     width: Number(m.width) || 1344, height: Number(m.height) || 768,
   }));
 }
@@ -49,4 +49,4 @@ export function pickModel(models, id, env) {
 }
 
 // what the Studio tab shows: no commands, only names, kinds, whether it is ready
-export const publicList = (models, env) => models.map((m) => ({ id: m.id, name: m.name, kind: m.kind, enabled: m.enabled, ready: m.enabled && !missingEnv(m, env).length, about: m.about, price: m.price, needs: m.needs }));
+export const publicList = (models, env) => models.map((m) => ({ id: m.id, name: m.name, kind: m.kind, enabled: m.enabled, ready: m.enabled && !missingEnv(m, env).length, about: m.about, price: m.price, time: m.time, needs: m.needs }));

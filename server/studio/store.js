@@ -8,6 +8,7 @@ import { saveDecision, backupName, MAX_TEXT } from './text-save.js';
 import { parseOptions, applyOp, choicesOf, withChoices } from './options.js';
 import { readResearch } from './research-runs.js';
 import { uploadFields } from './upload-plan.js';
+import { readPackage } from './package-data.js';
 
 const queues = new Map();
 // run fn after every earlier write to the same project
@@ -149,7 +150,8 @@ export async function readStudio(dir) {
     const st = await fs.stat(abs);
     video = { path: finalVideo, bytes: st.size, mtime: Math.round(st.mtimeMs), duration: await probeDuration(abs, st.mtimeMs) };
   } catch {}
-  return { plan, script, research, titles, thumbs, feed, upload: { ...upload, video } };
+  const pack = await readPackage(dir, upload.state);
+  return { plan, script, research, titles, thumbs, feed, upload: { ...upload, video }, pack };
 }
 
 export { parseOptions };
