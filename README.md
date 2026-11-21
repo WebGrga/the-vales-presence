@@ -4,7 +4,9 @@
 
 You drop in footage. A Claude Code agent plans, cuts the rough, adds overlays, cuts Shorts, researches titles and thumbnails, makes thumbnail options and prepares the upload. You watch and decide on a screen laid out like a video editor, in a pixel-art frame.
 
-<!-- GIF: a project going from footage to the rough review, a Keep / Restore on a cut, and the final. Add it as docs/presence.gif and show it here. -->
+[![The Vale's Presence in 20 seconds: the stages, the Cuts list, the lock, a 36 s fix, Shorts and the feed](docs/presence.gif)](https://vale.rokogrga.com/presence/)
+
+*20 seconds on a made-up project. [Watch it with sound](docs/presence.mp4).*
 
 ## What it does
 
