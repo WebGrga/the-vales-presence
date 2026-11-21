@@ -121,7 +121,7 @@ Each answer has one home. For how the screen behaves, see [using.md](using.md).
 - **"Claude Code login: not logged in".** Run `claude` in a terminal and log in there; the app uses the same login. The Setup tab shows the plan you are logged in with, never your email.
 - **No GPU encoder.** The GPU check says which encoder works. "CPU (libx264)" is fine, only slower. Updating the graphics driver is the usual fix for a GPU that is there but not used. To force one: `PRESENCE_ENCODER` in [configuration.md](configuration.md#environment-variables).
 - **"Remotion ... not installed".** Run `npm install --prefix engine/remotion`. The first overlay render also downloads a headless Chrome, so it needs the internet once.
-- **Research says "yt-dlp was not found".** The research stage uses yt-dlp, which the Setup tab does not check. Install it: `uv tool install yt-dlp` (or `pip install yt-dlp`).
+- **Research says "yt-dlp was not found".** The research stage uses yt-dlp: an installed one, else `python -m yt_dlp`, else `uvx yt-dlp` through uv. The Setup tab does not check it. This message means none of those ran: install it with `uv tool install yt-dlp` (or `pip install yt-dlp`).
 
 **While a project runs**
 
