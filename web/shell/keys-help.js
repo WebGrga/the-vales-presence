@@ -2,6 +2,7 @@
 // words keys.json gives it. Esc, ?, a click outside or Close shut it. The list itself is pure (keyList in keys.js).
 import { h, button } from './dom.js';
 import { keyList } from '../editor/keys.js';
+import { APP_KEYS } from './app-keys.js';
 
 let keysData = null, layer = null;
 
@@ -16,9 +17,12 @@ export async function toggleKeys() {
   const keys = await load();
   const groups = keyList(keys);
   const close = button(null, 'Close', 'Close (Esc)', () => closeKeys(), 'calm small');
+  const tour = button(null, 'Replay the tour', 'Show the five-step tour of the screen again', () => { closeKeys(); setTimeout(() => window.presence?.tour?.start(), 350); }, 'calm small');
   const box = h('div.keys-box.px-frame', { role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Keyboard keys' },
-    h('div.keys-head', h('h2.display', 'Keys'), h('span.dim', 'In the Edit tab. A text box you are typing in keeps its own keys.'), h('div.grow'), close),
-    h('div.keys-grid', ...groups.map((g) => h('section.keys-group', h('h3', g.title),
+    h('div.keys-head', h('h2.display', 'Keys'), h('span.dim', 'Everywhere works in every tab; the other groups work in the Edit tab. A text box you are typing in keeps its own keys.'), h('div.grow'), tour, close),
+    h('div.keys-grid', h('section.keys-group.keys-app', h('h3', 'Everywhere'),
+      h('dl', ...APP_KEYS.flatMap((r) => [h('dt', ...r.keys.flatMap((k, i) => [i ? h('span.dim', k === '…' || r.keys[i - 1] === '…' ? ' ' : ' or ') : null, k === '…' ? h('span.dim', '…') : h('kbd.kbd', k)]).filter(Boolean)), h('dd', r.label)]))),
+      ...groups.map((g) => h('section.keys-group', h('h3', g.title),
       h('dl', ...g.rows.flatMap((r) => [h('dt', ...r.keys.flatMap((k, i) => [i ? h('span.dim', ' or ') : null, h('kbd.kbd', k)]).filter(Boolean)), h('dd', r.label)]))))));
   layer = h('div.keys-layer', box);
   layer.addEventListener('pointerdown', (e) => { if (e.target === layer) closeKeys(); });

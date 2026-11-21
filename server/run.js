@@ -14,6 +14,7 @@ import { reviewSummary, readCuts, pendingChoices, workingFile, sendbackArchive, 
 import { keepExisting } from './stage-keep.js';
 import { createLive, outState, withBack } from './run-live.js';
 import { ITEMS_FILE } from './review-items.js';
+import { createExtras } from './run-extra.js';
 
 const readText = (f) => { try { return fs.readFileSync(f, 'utf8'); } catch { return ''; } };
 const readJsonOr = (f, d = null) => { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch { return d; } };
@@ -29,6 +30,8 @@ export function createRunner(ctx) {
   const A = () => { if (!ctx.agent) throw Object.assign(new Error('the agent is not available (agent.js did not load)'), { status: 503 }); return ctx.agent; };
   const toast = (text, kind = 'info', project) => ctx.broadcast({ type: 'toast', text, kind, project });
   const heavyRunning = new Set(), queue = [];
+  const stopAfter = new Set(); // projects whose running stage is the last one to run by itself ("Stop after this stage")
+  const warned = new Set();    // spend limits already told today / this month
   const limit = () => Number(readSettings().heavy) || 1;
   function readSettings() { try { return JSON.parse(fs.readFileSync(path.join(ctx.dataDir, 'settings.json'), 'utf8')) || {}; } catch { return {}; } }
 
@@ -39,8 +42,9 @@ export function createRunner(ctx) {
     if (!r) throw Object.assign(new Error(`the recipe "${p.recipe}" is missing`), { status: 400 });
     return { p, r, dir: P().dir(id) };
   }
-  const L = createLive(ctx, { load, heavyRunning, queue });
+  const L = createLive(ctx, { load, heavyRunning, queue, stopAfter });
   ctx.liveChanged = L.changed; // agent.js calls it when a question, a fire or the quiet guard changes
+  ctx.spendChanged = () => checkSpend(); // agent.js calls it when a chat turn ended
   const save = (p) => { const s = P().save(p); L.changed(p.id); return s; };
   const chainOn = () => readSettings().chain !== false;
 
@@ -124,6 +128,7 @@ export function createRunner(ctx) {
     const g = St.canGo(p, r);
     if (g.error) return { error: g.error };
     if (ctx.agent?.isBusy(id)) return { error: 'the agent is busy: wait for its turn to end, or press Stop' };
+    stopAfter.delete(id);
     A();
     const st = g.stage;
     if (st.heavy && !heavyRunning.has(id) && heavyRunning.size >= limit()) {
@@ -196,20 +201,35 @@ export function createRunner(ctx) {
         : ' Or go on with the files it made (nothing runs again).';
     }
     const saved = save(t.project);
-    P().log(id, { stage: st.id, kind: st.kind, start: new Date(started).toISOString(), ms: res.ms || 0, workMs: res.workMs, sleepMs: res.sleepMs || undefined, cost: res.cost || 0, status: t.outcome, error: res.error || undefined, stopped: res.stopped || undefined, missing: miss.length ? miss : undefined });
+    P().log(id, { plan: ctx.agent?.status?.(id)?.plan || undefined, stage: st.id, kind: st.kind, start: new Date(started).toISOString(), ms: res.ms || 0, workMs: res.workMs, sleepMs: res.sleepMs || undefined, cost: res.cost || 0, status: t.outcome, error: res.error || undefined, stopped: res.stopped || undefined, missing: miss.length ? miss : undefined });
     ctx.broadcast({ type: 'files', project: id, paths: [...(st.out || []), ITEMS_FILE] });
     if (asked || t.outcome === 'waiting') {
       ctx.agent?.emit(id, 'question', { text: String(res.text || '').trim().slice(-4000), fromText: true });
       toast(`${st.title || st.id}: the agent is waiting for your answer`, 'info', id);
     } else if (t.outcome === 'todo') {
-      toast(res.stopped ? `${st.title || st.id} stopped` : `${st.title || st.id} failed: ${String(res.error || '').slice(0, 200)}`, res.stopped ? 'info' : 'error', id);
+      const w = res.stopped ? `${st.title || st.id} stopped` : `${st.title || st.id} failed: ${String(res.error || '').slice(0, 200)}`;
+      toast(w, res.stopped ? 'info' : 'error', id);
+      notify(id, res.stopped ? 'stopped' : 'failed', st, w);
     } else if (t.outcome === 'done') {
       const next = St.current(saved, r);
-      if (saved.done) toast('Every stage is done', 'ok', id);
-      else if (next && St.isUser(next.kind)) toast(`${next.title || next.id} is waiting for you`, 'ok', id);
-      if (St.shouldChain(saved, r) && chainOn()) await go(id, { chained: true });
+      const held = stopAfter.delete(id);
+      if (saved.done) { toast('Every stage is done', 'ok', id); notify(id, 'finished', st, 'Every stage is done'); }
+      else if (next && St.isUser(next.kind)) { toast(`${next.title || next.id} is waiting for you`, 'ok', id); notify(id, 'yours', st, `${next.title || next.id} is waiting for you`); }
+      else notify(id, 'ended', st, `${st.title || st.id} is done`);
+      if (held && St.shouldChain(saved, r) && chainOn()) {
+        const w = `Stopped after “${st.title || st.id}”, as you asked. Press Go for “${next?.title || next?.id}”.`;
+        P().log(id, { stage: st.id, status: 'paused', why: 'stop after this stage' });
+        toast(w, 'info', id);
+      } else if (St.shouldChain(saved, r) && chainOn()) await go(id, { chained: true });
     }
+    stopAfter.delete(id);
+    L.changed(id);
+    checkSpend();
   }
+
+  // notifications, the spend limits, "stop after this stage", the queue overview and what Go will do (run-extra.js)
+  const X = createExtras(ctx, { P, load, L, craft, queue, stopAfter, warned, limit, readSettings });
+  const { notify, summary, checkSpend, setStopAfter, overview, goInfo } = X;
 
   // ---------------------------------------------------------------- you
   // Talk: an agent stage that asked you something goes on with your answer; otherwise a plain turn
@@ -370,6 +390,6 @@ export function createRunner(ctx) {
     for (const p of ctx.projects.list()) { const q = St.interrupted(p, { alive }); if (q) { P().save(q); ctx.log('stage interrupted by the restart:', p.id); } }
   }
 
-  return { go, say, approve, sendback, keep, stop, resume, view: L.view, boot, queued: () => [...queue], running: () => [...heavyRunning],
+  return { setStopAfter, overview, goInfo, summary, go, say, approve, sendback, keep, stop, resume, view: L.view, boot, queued: () => [...queue], running: () => [...heavyRunning],
     promptFor: (id) => { const { p, r, dir } = load(id); const st = St.current(p, r); return st ? promptFor(p, r, st, dir) : ''; } };
 }

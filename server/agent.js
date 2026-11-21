@@ -214,8 +214,9 @@ export function createAgent(ctx) {
   // a turn outside a stage (you talking to the agent): its time and cost still count, in the log and the project's chat total
   function chatEnded(S, { cost, ms, error }) {
     try {
-      ctx.projects?.log(S.id, { stage: 'chat', kind: 'chat', ms, cost, error });
+      ctx.projects?.log(S.id, { stage: 'chat', kind: 'chat', ms, cost, error, plan: S.plan || undefined });
       ctx.projects?.update(S.id, (p) => { const c = p.chat || { ms: 0, cost: 0, turns: 0 }; p.chat = { ms: c.ms + ms, cost: Math.round((c.cost + cost) * 1e6) / 1e6, turns: c.turns + 1 }; return p; });
+      ctx.spendChanged?.(); // the day's and month's limits (run.js)
     } catch (e) { log('chat total', e.message); }
   }
 

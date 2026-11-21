@@ -9,6 +9,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { spawn } from 'node:child_process';
 import { WebSocketServer } from 'ws';
 import { readJson, send, sendFile, safeJoin, matchRoute } from './http.js';
+import { createUndo } from './undo.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
@@ -40,6 +41,7 @@ const ctx = {
   projectDir, readJson, send, sendFile, broadcast, log,
   projects: null, agent: null, runner: null, media: null,
 };
+ctx.undo = createUndo({ dataDir, projectDir, broadcast });
 
 async function load(file, what) {
   try { return await import(pathToFileURL(file).href); } catch (e) {
@@ -85,8 +87,21 @@ async function api(req, res, url) {
   const hit = matchRoute(routes, req.method, url.pathname);
   if (!hit) return send(res, 404, { error: `no route ${req.method} ${url.pathname}` });
   req.params = hit.params; req.query = url.searchParams; req.pathname = url.pathname;
+  // a Studio or Context change keeps the old files for Undo (server/undo.js); the answer says so in x-undo
+  const undo = ctx.undo.begin(req.method, url.pathname);
+  let seen = null;
+  const c2 = { ...ctx, params: hit.params, query: url.searchParams, url };
+  if (undo) {
+    c2.readJson = async (r) => { seen = await ctx.readJson(r); return seen; };
+    const writeHead = res.writeHead.bind(res);
+    res.writeHead = (status, ...rest) => {
+      try { const made = undo.finish(seen, status); if (made) res.setHeader('x-undo', encodeURIComponent(JSON.stringify(made))); } catch {}
+      res.writeHead = writeHead;
+      return writeHead(status, ...rest);
+    };
+  }
   try {
-    await hit.route.handler(req, res, { ...ctx, params: hit.params, query: url.searchParams, url });
+    await hit.route.handler(req, res, c2);
     if (!res.headersSent && !res.writableEnded) send(res, 204, null);
   } catch (e) {
     const status = e?.status || 500;

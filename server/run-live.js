@@ -24,7 +24,7 @@ export function withBack(ctx, id, p, r) {
   try { return withBackFrom(p, r, ctx.projects?.readLog?.(id, 300) || []); } catch { return p; }
 }
 
-export function createLive(ctx, { load, heavyRunning, queue }) {
+export function createLive(ctx, { load, heavyRunning, queue, stopAfter = new Set() }) {
   // the live part of one project's view
   function liveOf(id, p, r, dir) {
     const a = ctx.agent?.live?.(id) || {};
@@ -40,7 +40,7 @@ export function createLive(ctx, { load, heavyRunning, queue }) {
   }
   function view(id) {
     const { p, r, dir } = load(id);
-    return St.view(p, r, liveOf(id, p, r, dir));
+    return { ...St.view(p, r, liveOf(id, p, r, dir)), stopAfter: stopAfter.has(id) };
   }
 
   // what a queued project waits behind: the heavy stages running, then the projects ahead of it in line

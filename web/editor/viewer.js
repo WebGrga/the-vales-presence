@@ -5,6 +5,7 @@
 // overlays and captions, on the same clock as the rough; shown once there is one). Proxies are used when the server made them,
 // else the footage itself. The maths (which piece plays when, source time) is in edl-map.js. Blur boxes are drawn on the picture
 // by viewer-redact.js. A piece whose video is still seeking is shown only once its frame is there (no flash of another frame).
+import { failWords } from './viewer-fail.js';
 import { h, icon, button } from '../shell/dom.js';
 import { toSource, toEdit, pieceAt } from './edl-map.js';
 import { fmtTC } from './zoom.js';
@@ -275,7 +276,11 @@ export function createViewer(store, ui) {
   }
   for (const v of vids) v.addEventListener('loadeddata', () => { if (note.textContent.startsWith('This video could not play')) note.hidden = true; }); // it plays now (a moved recording was found again)
   for (const v of vids) v.addEventListener('error', () => {
-    if (v.classList.contains('on')) { note.textContent = 'This video could not play here. If a recording was moved or deleted, find it again in Media (its row says missing). Otherwise a proxy made by the server plays everywhere.'; note.hidden = false; }
+    if (!v.classList.contains('on')) return;
+    const id = window.presence?.project?.()?.id;
+    const say = (files) => { note.textContent = failWords(v.currentSrc || v.src, files); note.hidden = false; };
+    say(null);
+    if (id) fetch(`/api/projects/${encodeURIComponent(id)}/footage`, { cache: 'no-cache' }).then((r) => r.json()).then((d) => { if (v.error) say(d.files); }).catch(() => {});
   });
 
   paintMode();

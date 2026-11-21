@@ -7,6 +7,7 @@ import { h, icon, button } from './dom.js';
 import { chips, totals, actions, fmtMs, fmtCost, fmtClock, elapsed, recipeOf, chipMode, pendingFrom, plainChoices } from './stages.js';
 import { createDraft, bindDraft } from './drafts.js';
 import { baseMark } from '../editor/edl-edit.js';
+import { ask } from './home-dialog.js';
 
 const KIND_ICON = { ask: 'question', make: 'agent', gate: 'flag', inspect: 'eye', record: 'mic', options: 'sparkle', upload: 'upload', export: 'export' };
 const AGENT_KINDS = new Set(['ask', 'make', 'inspect']);
@@ -83,7 +84,7 @@ export function mountStageBar(el, app) {
 
     const list = [];
     if (a.answer) list.push(button('question', 'Answer', 'The agent is waiting for your answer: open its questions', () => app.emit('focus-question', { type: 'focus-question' }), 'ask'));
-    if (a.go) list.push(button('go', 'Go', `Run “${a.cur.title}”`, () => call('go'), 'go'));
+    if (a.go) list.push(button('go', 'Go', `Run “${a.cur.title}” (Ctrl+Enter)`, () => { app.notify?.offer?.(document.getElementById('stagebar')); call('go'); }, 'go'));
     // after Stop or a failed stage: go on from the files already there (the last final, a finished rough) without paying for a new run
     if (a.keep && p.view?.keep) { const k = p.view.keep; list.push(button('keep', k.mode === 'back' ? 'Back to the last version' : 'Use what is there', k.text, () => call('keep'), 'calm')); }
     if (a.stop) list.push(button('stop', 'Stop', a.cur?.state === 'queued' ? 'Leave the line: do not run this stage' : 'Stop the agent', () => call('stop'), 'warn'));
@@ -183,6 +184,19 @@ export function mountStageBar(el, app) {
     }
     drawButtons(); paint();
   }
+  // Ctrl+Enter anywhere: Go, or Approve after a confirm (a stage that locks files uses the Approve box, which explains the lock)
+  app.keys = {
+    async go() {
+      const p = app.project(); if (!p) return app.toast('Open a project first.', 'info');
+      const a = actions(p, chips(p, recipeOf(p), { asking: !!app.waiting?.asking }));
+      if (a.answer) return app.emit('focus-question', { type: 'focus-question' });
+      if (a.go) { app.notify?.offer?.(document.getElementById('stagebar')); return void (await call('go')); }
+      if (!a.approve) return app.toast('Nothing to start or approve here right now.', 'info');
+      if (a.cur.lock) return openPop('approve', a);
+      const yes = await ask({ title: `${a.approveLabel}?`, body: [h('p', `Approve “${a.cur.title}” and go on to the next stage.`)], ok: a.approveLabel });
+      if (yes && (await call('approve', { notes: '' }))) { app.toast('Approved.', 'ok'); app.hooks.sent?.('approve'); }
+    },
+  };
   document.addEventListener('pointerdown', (e) => { if (!pop.hidden && !pop.contains(e.target) && !btns.contains(e.target)) pop.hidden = true; });
   addEventListener('keydown', (e) => { if (e.key === 'Escape' && !pop.hidden) pop.hidden = true; });
 

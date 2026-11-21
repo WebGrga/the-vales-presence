@@ -1,10 +1,11 @@
 // The tabs along the top right. Each tab is a module, web/<dir>/index.js, with mount(el, app) (it may return
 // { unmount() }). A tab mounts the first time it is shown and stays mounted while hidden, so nothing typed in it is
 // lost; when the project changes, the shown tab mounts again and the hidden ones the next time they are shown.
-// A missing module, or one that throws, shows "coming soon". Each mount gets its own app whose on() listeners are
-// dropped at the next mount.
+// A module that cannot be loaded, or one that throws, says why and has a Retry (tab-fail.js). Each mount gets its own
+// app whose on() listeners are dropped at the next mount.
 import { h, icon } from './dom.js';
 import { tabsFor, stageTab, currentStage } from './recipe-tabs.js';
+import { explain } from './tab-fail.js';
 
 export const TABS = [
   { id: 'edit', dir: 'editor', label: 'Edit', icon: 'scissors' },
@@ -43,7 +44,8 @@ export function createTabs(bar, host, app) {
   app.on('project', () => setTimeout(paintTabs, 0));
   app.on('project-view', () => paintTabs());
 
-  async function mountTab(t) {
+  let tries = 0;
+  async function mountTab(t, retry) {
     const s = state[t.id];
     try { s.handle?.unmount?.(); } catch (e) { console.error(e); }
     for (const off of s.offs.splice(0)) off();
@@ -51,20 +53,21 @@ export function createTabs(bar, host, app) {
     s.mounted = app.project()?.id ?? null;
     const scoped = { ...app, on: (type, fn) => { const off = app.on(type, fn); s.offs.push(off); return off; } };
     let mod = null;
-    try { mod = await import(`../${t.dir}/index.js`); } catch (e) {
-      if (!/Failed to fetch|404|Cannot find|error loading/i.test(String(e?.message))) console.error(e);
-      return soon(s.el, t, null);
-    }
-    if (typeof mod?.mount !== 'function') return soon(s.el, t, null);
-    try { s.handle = (await mod.mount(s.el, scoped)) || null; } catch (e) { console.error(e); soon(s.el, t, e); return; }
+    try { mod = await import(`../${t.dir}/index.js${retry ? `?retry=${++tries}` : ''}`); } catch (e) { console.error(e); return failed(s.el, t, 'load', e); }
+    if (typeof mod?.mount !== 'function') return failed(s.el, t, 'shape');
+    try { s.handle = (await mod.mount(s.el, scoped)) || null; } catch (e) { console.error(e); failed(s.el, t, 'mount', e); return; }
     app.emit('mounted', { type: 'mounted', tab: t.id, el: s.el });
   }
 
-  function soon(el, t, err) {
-    el.replaceChildren(h('div.coming-soon',
-      h('img.icon.big', { src: `/icons/${t.icon}.png`, alt: '' }),
-      h('h2', `${t.label}: coming soon`),
-      h('p.muted', err ? `This room did not open: ${err.message}` : 'This room is still being built.')));
+  // the tab says why it did not open, and Retry tries again (the state of your project is not touched)
+  function failed(el, t, stage, err) {
+    const w = explain(t.label, stage, err);
+    el.replaceChildren(h('div.coming-soon.tab-failed', { role: 'alert' },
+      h('img.icon.big', { src: '/icons/cross.png', alt: '' }),
+      h('h2', w.title),
+      h('p.muted', w.why),
+      h('p.dim', w.hint),
+      h('button.go', { type: 'button', on: { click: () => mountTab(t, true) } }, icon('redo', true), h('span', 'Retry'))));
   }
 
   function show(id) {

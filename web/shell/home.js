@@ -117,6 +117,6 @@ export function mountHome(host, app) {
   function close() { if (el.hidden) return; el.hidden = true; document.body.classList.remove('home-open'); selecting = false; selected.clear(); app.route(); }
   const live = debounce(() => { if (!el.hidden) load(); }, 400);
   app.on('projects', live); app.on('project', live);
-  addEventListener('keydown', (e) => { if (e.key === 'Escape' && !el.hidden && app.project() && !document.querySelector('.home-dialog-layer, .home-menu') && !e.target.closest?.('input,select')) close(); });
+  addEventListener('keydown', (e) => { if (e.key === 'Escape' && !el.hidden && app.project() && !document.querySelector('.home-dialog-layer, .home-menu') && !e.target.closest?.('select') && !(e.target.closest?.('input,textarea') && e.target.value)) close(); }); // Esc closes the page unless you are in the middle of typing
   return { open, close, isOpen: () => !el.hidden, refresh: load, focusNew: () => form?.focus() };
 }

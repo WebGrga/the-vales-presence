@@ -1,6 +1,7 @@
 // The Edit tab: laid out like a video editor. Left the media bin and the transcript, centre the viewer, right the
 // Cuts list and the agent, bottom the timeline; every bar between them drags. Keys are data in keys.json (the Cuts
 // list's scope wins while it is the active panel; a focused text box keeps its keys).
+import { editorState } from '../shell/save-state.js';
 import { h, icon, button } from '../shell/dom.js';
 import { split, restoreSizes } from '../shell/split.js';
 import { createStore } from './store.js';
@@ -103,7 +104,7 @@ export async function mount(root, app) {
 
   // ------------------------------------------------------------------ data
   store.on(({ what }) => {
-    if (what === 'saved') { cutsList.saved(S.saveState); viewer.boxes.paint(); return; }
+    if (what === 'saved') { cutsList.saved(S.saveState); app.save?.report('editor', editorState(S.saveState, S.editsState), S.saveState); viewer.boxes.paint(); return; }
     if (what === 'edits') { timeline.rebuild(); viewer.boxes.paint(true); return; }
     if (what === 'note') { cutsList.paint(); return; }
     if (what === 'all') {

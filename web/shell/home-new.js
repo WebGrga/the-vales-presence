@@ -106,6 +106,8 @@ export function newProjectForm({ app, recipes, projects, onOpen, onCreated, onRe
   topic.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) create(); });
   name.addEventListener('input', () => say());
 
+  // the default recipe from Settings (when one is set, the box starts on it)
+  app.api('/api/agent/settings').then((d) => { const id = d?.settings?.defaultRecipe; if (id && id !== chosen && list.some((x) => x.id === id)) { chosen = id; cards.set(id); paintExtras(); } }).catch(() => {});
   const el = h('div.home-new', h('div.home-new-row', name), cards.el, topicBox, feet.el, h('div.home-new-go', make, where), note);
   paintExtras();
   return {

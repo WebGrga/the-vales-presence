@@ -3,7 +3,7 @@
 // Nothing is dropped silently: a value that cannot be kept is an error and nothing at all is saved.
 import { MODES, EFFORTS } from './agent-util.js';
 
-export const KEYS = ['model', 'effort', 'permissionMode', 'chain', 'heavy', 'quietMinutes'];
+export const KEYS = ['model', 'effort', 'permissionMode', 'chain', 'heavy', 'quietMinutes', 'warnDay', 'warnMonth', 'defaultRecipe'];
 export const HEAVY_MAX = 8;
 export const QUIET_MAX = 240;
 const MODEL_RE = /^[a-z0-9.\-[\]]{2,60}$/i;
@@ -38,6 +38,13 @@ export function checkSettings(input) {
       const n = num(v);
       if (!Number.isInteger(n) || n < 0 || n > QUIET_MAX) return { error: `quietMinutes must be a whole number from 0 to ${QUIET_MAX}.` };
       patch.quietMinutes = n;
+    } else if (k === 'warnDay' || k === 'warnMonth') {
+      const n = num(v);
+      if (!Number.isFinite(n) || n < 0 || n > 100000) return { error: `${k} must be an amount in dollars from 0 to 100000 (0 turns the warning off).` };
+      patch[k] = Math.round(n * 100) / 100;
+    } else if (k === 'defaultRecipe') {
+      if (typeof v !== 'string' || (v !== '' && !/^[a-z0-9][a-z0-9_-]{0,79}$/i.test(v))) return { error: 'defaultRecipe must be a recipe id, or empty for none.' };
+      patch.defaultRecipe = v;
     }
   }
   return { patch };

@@ -13,6 +13,12 @@ export const FIELDS = [
     help: 'How many render stages (the rough cut, the visuals, cutting Shorts) run at the same time across all projects. The others wait in line. A whole number from 1 to 8. Takes effect at once.' },
   { key: 'quietMinutes', label: 'Report a quiet stage after', kind: 'number', min: 0, max: 240, unit: 'minutes',
     help: 'A stage with no output for this long is reported to you once as possibly stuck, and keeps running. 0 never reports. A whole number from 0 to 240. Takes effect at once.' },
+  { key: 'defaultRecipe', label: 'Default recipe', kind: 'select',
+    help: 'The recipe the New project box starts on. With none chosen it starts on the one you used last. Takes effect at once.' },
+  { key: 'warnDay', label: 'Warn me above, per day', kind: 'number', min: 0, max: 100000, step: 1, unit: 'dollars', zeroEmpty: true,
+    help: 'Tells you once a day when what the agents cost today passes this amount. Empty means no warning. On a subscription the amount is usage valued at API prices, not a bill. Takes effect at once.' },
+  { key: 'warnMonth', label: 'Warn me above, per month', kind: 'number', min: 0, max: 100000, step: 1, unit: 'dollars', zeroEmpty: true,
+    help: 'The same for the month. Empty means no warning. Takes effect at once.' },
 ];
 export const MODE_NAMES = { auto: 'Auto (Claude Code decides what is safe)', acceptEdits: 'Accept edits (a fixed list of tools)' };
 export const EFFORT_NAMES = { low: 'Low', medium: 'Medium', high: 'High', xhigh: 'Extra high', max: 'Max' };
@@ -23,6 +29,7 @@ export function optionsFor(key, meta, current) {
   if (key === 'model') list = (meta.models || []).map((m) => ({ value: m.value, label: `${m.name}: ${m.about}` }));
   else if (key === 'effort') list = (meta.efforts || []).map((v) => ({ value: v, label: EFFORT_NAMES[v] || v }));
   else if (key === 'permissionMode') list = (meta.modes || []).map((v) => ({ value: v, label: MODE_NAMES[v] || v }));
+  else if (key === 'defaultRecipe') list = [{ value: '', label: 'None: the one I used last' }, ...(meta.recipes || []).map((r) => ({ value: r.id, label: r.name || r.id }))];
   if (current != null && !list.some((o) => o.value === current)) list.push({ value: current, label: `${current} (your own)` });
   return list;
 }
@@ -33,12 +40,12 @@ export function patchFrom(values, saved) {
   for (const f of FIELDS) {
     const v = values[f.key];
     if (v === undefined) continue;
-    const out = f.kind === 'number' ? (String(v).trim() === '' ? NaN : Number(v)) : v;
+    const out = f.kind === 'number' ? (String(v).trim() === '' ? (f.zeroEmpty ? 0 : NaN) : Number(v)) : v;
     if (out !== saved[f.key]) patch[f.key] = out;
   }
   return patch;
 }
 // the saved settings as form values
-export const valuesOf = (s) => Object.fromEntries(FIELDS.map((f) => [f.key, f.kind === 'number' ? String(s[f.key] ?? '') : s[f.key]]));
+export const valuesOf = (s) => Object.fromEntries(FIELDS.map((f) => [f.key, f.kind === 'number' ? (f.zeroEmpty && !s[f.key] ? '' : String(s[f.key] ?? '')) : (s[f.key] ?? (f.kind === 'select' ? '' : s[f.key]))]));
 // which fields the typed values change
 export const changedKeys = (values, saved) => Object.keys(patchFrom(values, saved));

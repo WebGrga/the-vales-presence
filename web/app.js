@@ -15,6 +15,18 @@ import { createWaiting, pageTitle } from './shell/waiting.js';
 import { mountHint } from './shell/next-hint.js';
 import { toggleKeys, keysOpen, closeKeys } from './shell/keys-help.js';
 import { comboOf, ownsKeys } from './editor/keys.js';
+import { mountSaveChip } from './shell/save-state.js';
+import { mountUndo } from './shell/undo.js';
+import { mountActivity } from './shell/activity.js';
+import { mountDrawer } from './shell/drawer.js';
+import { mountGoLine } from './shell/go-line.js';
+import { createNotify, badged } from './shell/notify.js';
+import { appAction } from './shell/app-keys.js';
+import { mountPalette } from './shell/palette.js';
+import { createTour } from './shell/tour.js';
+import { applyUiSize } from './shell/prefs.js';
+
+applyUiSize();
 
 const LAST = 'presence.lastProject';
 const sock = createSocket();
@@ -75,12 +87,22 @@ const pickEl = h('div.picker');
 const tabBar = h('nav.tabs', { 'aria-label': 'Rooms' });
 const live = h('span.live', { title: 'Connecting…' });
 const keysBtn = h('button.calm.icon-only.keys-btn', { type: 'button', title: 'Keyboard keys (?)', 'aria-label': 'Keyboard keys', on: { click: () => toggleKeys() } }, '?');
-top.append(brand, pickEl, h('div.grow'), tabBar, keysBtn, live);
+const saveSlot = h('span.save-slot'), actSlot = h('span.act-slot');
+top.append(brand, pickEl, h('div.grow'), saveSlot, actSlot, tabBar, keysBtn, live);
+app.save = mountSaveChip(saveSlot, app);
+app.undo = mountUndo(app);
+app.notify = createNotify(app);
+app.drawer = mountDrawer(app);
+app.palette = mountPalette(app);
+app.tour = createTour(app);
+app.shownTab = () => tabs?.shown;
 app.home = mountHome(document.getElementById('rooms'), app);
 app.openTab = (id) => { app.home.close(); tabs.show(id); };
 app.hint = mountHint(document.getElementById('stagebar'), app);
 const picker = mountPicker(pickEl, app);
 mountStageBar(document.getElementById('stagebar'), app);
+mountGoLine(document.getElementById('stagebar'), app);
+app.activity = mountActivity(document.getElementById('stagebar'), app, actSlot);
 const tabs = createTabs(tabBar, document.getElementById('rooms'), app);
 document.getElementById('foot').append(
   h('a.made', { href: 'https://vale.rokogrga.com', target: '_blank', rel: 'noopener' }, 'Made in The Vale'));
@@ -114,7 +136,8 @@ async function selectProject(id, tab) {
 }
 
 // the agent waiting for you: the tab title, a toast (once per question), and the Answer button's way to the question
-function paintTitle() { document.title = pageTitle(current, app.waiting.asking); }
+function paintTitle() { document.title = badged(pageTitle(current, app.waiting.asking), app.notify.unseen); }
+sock.on('badge', paintTitle);
 sock.on('waiting', (m) => {
   paintTitle();
   document.body.classList.toggle('asking', !!m.asking);
@@ -127,6 +150,17 @@ sock.on('mounted', (m) => { if (m.tab === 'edit') import('./editor/layout.js').t
 // ? shows every key, in every tab (a text box keeps its own keys)
 addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && keysOpen()) { closeKeys(); e.preventDefault(); return; }
+  const blocked = !!document.querySelector('.home-dialog-layer, .pal-layer, .tour-layer, .keys-layer, .media-dialog-layer');
+  const a = appAction(e, { tab: tabs?.shown, blocked });
+  if (a) {
+    e.preventDefault(); e.stopPropagation();
+    if (a.action === 'tab') { if (tabBar.querySelector(`[data-tab="${a.arg}"]`)?.hidden) toast('This recipe does not use that tab.', 'info'); else app.openTab(a.arg); }
+    else if (a.action === 'projects') app.home.open();
+    else if (a.action === 'palette') app.palette.open();
+    else if (a.action === 'go') { if (app.home.isOpen()) toast('Close the Projects page first: Go and Approve act on the open project.', 'info'); else app.keys?.go(); }
+    else if (a.action === 'undo') app.undo.undoTab();
+    return;
+  }
   if (ownsKeys(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
   if (comboOf(e) === '?') { e.preventDefault(); e.stopPropagation(); toggleKeys(); }
 }, true);
@@ -139,6 +173,7 @@ async function boot() {
   if (!id) { try { id = localStorage.getItem(LAST); } catch {} }
   const setup = needsSetup(app.api); // asked at once; the first doctor run takes a few seconds
   await selectProject(id, TABS.some((t) => t.id === tab) ? tab : 'edit');
+  app.tour.maybe();
   if (!current || tab === 'home') app.home.open(); // at once: the page never sits empty while the doctor runs
   if (await setup) {
     if (current && !app.home.isOpen()) { tabs.show('setup'); app.route(); }

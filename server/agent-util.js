@@ -7,7 +7,7 @@ export const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'];
 export const MODES = ['auto', 'acceptEdits'];
 // chain: agent stages run on by themselves after the one before; heavy: renders at once across projects;
 // quietMinutes: a stage that shows no output for this long is reported to you (0: never)
-export const DEFAULTS = { model: 'claude-opus-5-5', effort: 'medium', permissionMode: 'auto', chain: true, heavy: 1, quietMinutes: 15 };
+export const DEFAULTS = { model: 'claude-opus-5-5', effort: 'medium', permissionMode: 'auto', chain: true, heavy: 1, quietMinutes: 15, warnDay: 0, warnMonth: 0, defaultRecipe: '' };
 export const ALLOW = ['Bash', 'Read', 'Write', 'Edit', 'Glob', 'Grep', 'WebSearch', 'WebFetch'];
 const TEXT_MAX = 4000;       // tool results and inputs sent to the screen are trimmed
 
@@ -21,6 +21,9 @@ export function cleanSettings(s) {
     if (typeof s.chain === 'boolean') o.chain = s.chain;
     if (Number.isInteger(s.heavy) && s.heavy >= 1 && s.heavy <= 8) o.heavy = s.heavy;
     if (Number.isFinite(s.quietMinutes) && s.quietMinutes >= 0 && s.quietMinutes <= 240) o.quietMinutes = Math.round(s.quietMinutes);
+    if (Number.isFinite(s.warnDay) && s.warnDay >= 0 && s.warnDay <= 100000) o.warnDay = Math.round(s.warnDay * 100) / 100;
+    if (Number.isFinite(s.warnMonth) && s.warnMonth >= 0 && s.warnMonth <= 100000) o.warnMonth = Math.round(s.warnMonth * 100) / 100;
+    if (typeof s.defaultRecipe === 'string' && /^[a-z0-9][a-z0-9_-]{0,79}$/i.test(s.defaultRecipe)) o.defaultRecipe = s.defaultRecipe;
   }
   return o;
 }

@@ -4,6 +4,7 @@
 import { h } from '../shell/dom.js';
 import { ensureCss } from '../setup/first.js';
 import { FIELDS, optionsFor, patchFrom, valuesOf, changedKeys } from './form.js';
+import { mountLocal } from './local.js';
 
 const KEY = 'presence.settingsDraft';
 const keep = (v) => { try { if (v) localStorage.setItem(KEY, JSON.stringify(v)); else localStorage.removeItem(KEY); } catch {} };
@@ -13,12 +14,13 @@ export function mount(el, app) {
   ensureCss(new URL('./settings.css', import.meta.url));
   const status = h('p.set-status', { role: 'status', 'aria-live': 'polite' });
   const rows = h('div.set-rows');
+  const local = h('div.set-local');
   const save = h('button.go', { type: 'button', on: { click: () => doSave() } }, 'Save');
-  const undo = h('button.calm', { type: 'button', on: { click: () => reset() } }, 'Undo my changes');
+  const undo = h('button.calm', { type: 'button', on: { click: () => reset() } }, 'Discard changes');
   el.append(h('div.settings',
     h('h2', 'Settings'),
     h('p.muted.set-intro', 'How the agents work. They are kept in data/settings.json, so a change here and a change in that file are the same thing.'),
-    rows, h('div.set-bar', save, undo, status)));
+    rows, h('div.set-bar', save, undo, status), local));
 
   let meta = null, saved = null, values = null, inputs = {}, busy = false;
 
@@ -49,7 +51,7 @@ export function mount(el, app) {
     } else if (f.kind === 'toggle') {
       c = h('input', { type: 'checkbox', id: 'set-' + f.key, checked: !!values[f.key] });
     } else {
-      c = h('input', { type: 'number', id: 'set-' + f.key, min: f.min, max: f.max, step: 1, inputmode: 'numeric', value: values[f.key] });
+      c = h('input', { type: 'number', id: 'set-' + f.key, min: f.min, max: f.max, step: f.step || 1, inputmode: 'numeric', value: values[f.key], placeholder: f.zeroEmpty ? 'off' : undefined });
     }
     c.addEventListener('input', () => touch());
     c.addEventListener('change', () => touch());
@@ -77,6 +79,7 @@ export function mount(el, app) {
   async function load() {
     try {
       const d = await app.api('/api/agent/settings');
+      try { d.recipes = (await app.api('/api/recipes')).recipes || []; } catch { d.recipes = []; }
       meta = d; saved = d.settings; values = valuesOf(saved);
       const draft = kept();
       if (draft) for (const f of FIELDS) if (draft[f.key] !== undefined) values[f.key] = draft[f.key];
@@ -119,5 +122,6 @@ export function mount(el, app) {
 
   say('Loading…');
   load();
+  mountLocal(local, app);
   return { unmount() {} };
 }

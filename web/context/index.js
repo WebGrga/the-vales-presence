@@ -17,6 +17,7 @@ function styles() {
 
 export function mount(el, app) {
   styles();
+  const wantView = app.sub?.get('context'); // read before the sets bar (it starts on the map and would write it)
   const st = { map: null, recipe: null, open: null, hover: null };
   const q = () => {
     const p = new URLSearchParams();
@@ -31,7 +32,12 @@ export function mount(el, app) {
   const legend = h('div.cx-legend',
     h('span.cx-key.shipped', 'shipped'), h('span.cx-key.mine', 'yours'), h('span.cx-key.agent', "the agent's"), h('span.cx-key.missing', 'missing'));
   const sub = h('p.cx-sub.muted');
-  const bar = h('header.cx-bar', h('div.cx-title', icon('book'), h('h2.display', 'Context')), h('label.cx-for', h('span.muted', 'Recipe'), recipeSel), sub, h('div.grow'), legend, newBtn);
+  // a map wider than its room scrolls: this brings the Studio column (the last one) into view, and back
+  const jump = h('button.small.calm.cx-jump', { type: 'button', hidden: true, on: { click: () => {
+    const c = cols.querySelector('[data-col="studio"]'); if (!c) return;
+    if (jump.dataset.dir === 'back') mapEl.scrollTo({ left: 0, behavior: 'smooth' }); else c.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  } } });
+  const bar = h('header.cx-bar', h('div.cx-title', icon('book'), h('h2.display', 'Context')), h('label.cx-for', h('span.muted', 'Recipe'), recipeSel), sub, h('div.grow'), jump, legend, newBtn);
   const cols = h('div.cx-cols');
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.classList.add('cx-lines');
@@ -51,7 +57,7 @@ export function mount(el, app) {
     opened: (id) => { st.open = id; mark(); },
   });
 
-  const sets = setsBar({ app, ctx: panel.ctx, host: panel.ctx.host, onView: (v) => { mapEl.hidden = v === 'list'; lister.el.hidden = v !== 'list'; try { localStorage.setItem('presence.context.view', v); } catch {} if (v === 'list') lister.draw(); else requestAnimationFrame(drawLines); } });
+  const sets = setsBar({ app, ctx: panel.ctx, host: panel.ctx.host, onView: (v) => { mapEl.hidden = v === 'list'; lister.el.hidden = v !== 'list'; try { localStorage.setItem('presence.context.view', v); } catch {} app.sub?.set('context', v); if (v === 'list') lister.draw(); else requestAnimationFrame(drawLines); } });
   head.append(sets.el);
 
   // ---------------------------------------------------------------- load and draw
@@ -205,11 +211,24 @@ export function mount(el, app) {
     mapEl.addEventListener('pointermove', move); mapEl.addEventListener('pointerup', up); mapEl.addEventListener('pointercancel', up);
   });
 
-  const ro = new ResizeObserver(() => requestAnimationFrame(() => { drawLines(); mapEl.classList.toggle('pannable', mapEl.scrollWidth > mapEl.clientWidth + 2); }));
+  function paintJump() {
+    const over = mapEl.scrollWidth > mapEl.clientWidth + 2, c = cols.querySelector('[data-col="studio"]');
+    jump.hidden = !over || !c || mapEl.hidden;
+    if (jump.hidden) return;
+    const m = mapEl.getBoundingClientRect(), r = c.getBoundingClientRect();
+    const seen = r.left >= m.left - 2 && r.right <= m.right + 2;
+    jump.dataset.dir = seen ? 'back' : 'to';
+    jump.textContent = seen ? '◂ First stages' : 'Studio ▸';
+    jump.title = seen ? 'Scroll the map back to the first stage' : 'The map is wider than this window: scroll the Studio column into view';
+  }
+  mapEl.addEventListener('scroll', paintJump, { passive: true });
+  const ro = new ResizeObserver(() => requestAnimationFrame(() => { drawLines(); mapEl.classList.toggle('pannable', mapEl.scrollWidth > mapEl.clientWidth + 2); paintJump(); }));
   ro.observe(canvas);
 
   // ---------------------------------------------------------------- live
-  try { const v = localStorage.getItem('presence.context.view'); if (v === 'list') sets.setView('list'); } catch {}
+  // the address names the view (#/<project>/context/list): a reload or a pasted link lands on it
+  try { const v = wantView || localStorage.getItem('presence.context.view'); if (v === 'list') sets.setView('list'); else if (v === 'map') sets.setView('map'); } catch {}
+  app.on('sub', (m) => { if (m?.tab === 'context' && (m.sub === 'map' || m.sub === 'list') && m.sub !== sets.view) sets.setView(m.sub); });
   try { st.recipe = app.project()?.recipe || localStorage.getItem(RECIPE_KEY) || null; } catch {}
   app.on('open-context', () => openAsked());
   app.on('context', () => load());
