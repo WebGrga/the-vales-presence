@@ -7,6 +7,7 @@ import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import * as P from './parse.js';
+import { CANDIDATES as YTDLP } from '../studio/research-fetch.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const FIXES = JSON.parse(fs.readFileSync(path.join(here, 'fixes.json'), 'utf8'));
@@ -128,12 +129,22 @@ async function checkRemotion(root) {
   return { id: 'remotion', title: 'Remotion (draws the overlays)', required: true, ...P.judgeRemotion({ wanted, installed: inst?.version || null, hasPackage: !!pkg }) };
 }
 
+// yt-dlp (research only): the first of the research stage's own candidates that answers --version.
+// uvx is not run (its first run downloads yt-dlp and could hang the tab): `uvx --version` only says it could work.
+async function checkYtDlp() {
+  const direct = YTDLP.filter((c) => c[0] !== 'uvx');
+  const rs = await Promise.all(direct.map((c) => run(c[0], [...c.slice(1), '--version'], { timeout: 8000 })));
+  const i = rs.findIndex((r) => r.code === 0 && P.ytDlpVersion(r.out));
+  const uvx = i < 0 && YTDLP.some((c) => c[0] === 'uvx') ? (await run('uvx', ['--version'], { timeout: 5000 })).code === 0 : false;
+  return { id: 'ytdlp', title: 'yt-dlp (research only)', required: false, ...P.judgeYtDlp({ how: i < 0 ? null : direct[i].join(' '), version: i < 0 ? null : P.ytDlpVersion(rs[i].out), uvx }) };
+}
+
 // every check, in the order the Setup tab lists them
 export async function runChecks({ root, dataDir, platform = process.platform }) {
   const osName = P.osOf(platform);
   const t0 = Date.now();
   const list = await Promise.all([
-    checkNode(), checkFf(), checkPython(), checkUv(), checkClaude(root), checkRemotion(root), checkGpu(osName), checkDisk(dataDir),
+    checkNode(), checkFf(), checkPython(), checkUv(), checkClaude(root), checkRemotion(root), checkGpu(osName), checkYtDlp(), checkDisk(dataDir),
   ].map((p, i) => p.catch((e) => ({ id: `check${i}`, title: 'a check', required: false, status: 'warn', found: 'the check itself failed', why: String(e?.message || e) }))));
   const checks = list.map((c) => {
     const { fixId, ...rest } = c;

@@ -38,6 +38,12 @@
   "sdk": {
     "all": { "text": "Install the app's two dependencies in the repository folder.", "cmds": ["npm install"] }
   },
+  "ytdlp": {
+    "win": { "text": "Optional, for the research stage only. Install yt-dlp with uv (or pip).", "cmds": ["uv tool install yt-dlp", "python -m pip install yt-dlp"] },
+    "mac": { "text": "Optional, for the research stage only. Install yt-dlp with Homebrew (or uv).", "cmds": ["brew install yt-dlp", "uv tool install yt-dlp"] },
+    "linux": { "text": "Optional, for the research stage only. Install yt-dlp with uv (or pip).", "cmds": ["uv tool install yt-dlp", "python3 -m pip install yt-dlp"] },
+    "link": "https://github.com/yt-dlp/yt-dlp#installation"
+  },
   "disk": {
     "all": { "text": "Free some space on the drive that holds data/ (or set PRESENCE_DATA to a folder on a bigger drive). Old projects' video/out/work folders are caches and can be deleted.", "cmds": [] }
   },

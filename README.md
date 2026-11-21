@@ -16,7 +16,7 @@ You drop in footage. A Claude Code agent plans, cuts the rough, adds overlays, c
 4. **The whole studio:** plan, script, record, edit, Shorts, title and thumbnail research, thumbnail options, a feed preview, upload.
 5. **You control the agent's context:** every skill, rule and context file each stage reads, editable in place, with skills switched on and off per stage, plus a house rules book that learns from your corrections.
 6. **Every cut is measured on the sound** and listed with Before / After clips, Keep / Restore / Note.
-7. **Export** to MP4, SRT, FCPXML and OTIO.
+7. **Export** to MP4, SRT, FCPXML and OTIO, plus YouTube chapters for the description and .mp4 copies of recordings that editors do not import.
 
 ## The numbers
 
@@ -41,6 +41,7 @@ npm start
 - **Node.js 22** or newer.
 - **Claude Code**, logged in with your Claude account. The agents run on that login through the Claude Agent SDK: nothing else to pay for, no API key needed.
 - **ffmpeg and ffprobe** on your PATH.
+- **yt-dlp** (optional: only the research stage needs it; the Setup tab checks it and shows the install command). `uv tool install yt-dlp` or `pip install yt-dlp`.
 - **Python 3.10+ with numpy and Pillow**, and **uv** (it runs the speech-to-text and the word alignment, which fetch their own packages the first time).
 - **Disk:** about 20 GB free for a long video's render cache.
 - **A GPU is optional.** NVIDIA (NVENC and CUDA), Intel Quick Sync, AMD AMF and Apple VideoToolbox are found by themselves; without one the CPU encodes and transcribes, only slower.

@@ -5,25 +5,43 @@
       "kind": "mp4", "name": "Video (MP4)", "icon": "film", "needs": ["final", "rough"],
       "what": "The finished video with its visuals, ready to upload. Before the visuals are done this is the approved rough.",
       "opens": "Every player, YouTube and every editor.",
-      "button": "Get the video"
+      "button": "Get the video",
+      "missing": "There is no video yet: the rough cut makes one."
     },
     {
       "kind": "srt", "name": "Subtitles (SRT)", "icon": "text", "needs": ["words", "captions"],
       "what": "What is said, timed to the video: the video's own caption lines when they cover the talk, else every spoken word in short lines. Fillers are left out.",
       "opens": "YouTube Studio (Subtitles, Upload file, With timing), video players, and every editor.",
-      "button": "Make subtitles"
+      "button": "Make subtitles",
+      "missing": "There are no words yet: they come when the rough is handed over."
     },
     {
       "kind": "fcpxml", "name": "Edit list (FCPXML 1.10)", "icon": "layers", "needs": ["edl"],
       "what": "The approved cut as a timeline: one clip per kept stretch, linked to your original footage, so you can keep editing it by hand. The visuals are not in it.",
       "opens": "Final Cut Pro 10.6 or newer (File, Import, XML) and DaVinci Resolve (File, Import, Timeline).",
-      "button": "Make FCPXML"
+      "button": "Make FCPXML",
+      "missing": "There is no edit list yet: the rough cut writes it."
     },
     {
       "kind": "otio", "name": "Edit list (OpenTimelineIO)", "icon": "layers", "needs": ["edl"],
       "what": "The same cut as an OpenTimelineIO timeline: one video track and one audio track, linked to your footage.",
       "opens": "DaVinci Resolve 18.5 or newer (File, Import, Timeline) and any tool built on OpenTimelineIO.",
-      "button": "Make OTIO"
+      "button": "Make OTIO",
+      "missing": "There is no edit list yet: the rough cut writes it."
+    },
+    {
+      "kind": "chapters", "name": "Chapters (YouTube)", "icon": "text", "needs": ["chapters"], "text": true,
+      "what": "The timestamp lines for the video description (0:00 Intro, 1:15 ...), from video/out/chapters.json when the agent or you wrote one, else drafted from the spoken words: check the titles. YouTube shows chapters from at least three, the first at 0:00, each 10 s or longer.",
+      "opens": "Paste them into the description in YouTube Studio. Also saved as a .chapters.txt file.",
+      "button": "Make chapters",
+      "missing": "There are no words yet to draft chapters from: they come when the rough is handed over."
+    },
+    {
+      "kind": "remux", "name": "MP4 copies of recordings", "icon": "film", "needs": ["remux"], "list": true,
+      "what": "Recordings in a container some editors do not import (.mkv and others) copied as .mp4 into export/media/, with no re-encode and every sound track kept. FCPXML and OTIO then link the copies: make this first, then make the edit list again.",
+      "opens": "Final Cut Pro, DaVinci Resolve and any program that wants .mp4 footage.",
+      "button": "Make MP4 copies",
+      "missing": "Nothing to copy: every recording is already an .mp4 or .mov, or there is no edit list yet."
     }
   ]
 }

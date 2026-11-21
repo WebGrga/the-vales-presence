@@ -29,3 +29,8 @@
 .export-short > .export-name { margin: 0 0 6px; }
 .export-card.is-small { padding: 8px 12px; }
 .export-list[hidden] { display: none; }
+
+/* chapters: the lines to paste, with Copy; remux: one row per copy */
+.export-text { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--dgrey); }
+.export-text pre { margin: 0 0 8px; padding: 8px 10px; max-height: 220px; overflow: auto; background: var(--dusk); color: var(--cream); font: 14px/1.5 var(--mono, monospace); white-space: pre-wrap; user-select: text; }
+.export-files .export-file { margin-top: 6px; padding-top: 6px; }

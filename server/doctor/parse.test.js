@@ -120,7 +120,7 @@ test('summary: only required failures block', () => {
 
 test('every check has a fix for every OS', () => {
   const fixes = JSON.parse(fs.readFileSync(new URL('./fixes.json', import.meta.url), 'utf8'));
-  for (const id of ['node', 'ffmpeg', 'uv', 'python', 'gpu', 'claude', 'sdk', 'disk', 'remotion']) {
+  for (const id of ['node', 'ffmpeg', 'uv', 'python', 'gpu', 'claude', 'sdk', 'disk', 'remotion', 'ytdlp']) {
     for (const os of ['win', 'mac', 'linux']) {
       const f = P.fixFor(fixes, id, os);
       assert.ok(f && f.text, `${id} on ${os}`);
@@ -128,4 +128,22 @@ test('every check has a fix for every OS', () => {
   }
   assert.deepEqual(P.fixFor(fixes, 'ffmpeg', 'mac').cmds, ['brew install ffmpeg']);
   assert.equal(P.fixFor(fixes, 'nope', 'win'), null);
+});
+
+test('yt-dlp: optional, says which command answered', () => {
+  assert.equal(P.ytDlpVersion('2025.01.15\n'), '2025.01.15');
+  assert.equal(P.ytDlpVersion('No module named yt_dlp'), null);
+  const ok = P.judgeYtDlp({ how: 'python -m yt_dlp', version: '2025.01.15' });
+  assert.equal(ok.status, 'ok');
+  assert.match(ok.found, /2025\.01\.15.*python -m yt_dlp/);
+  const uvx = P.judgeYtDlp({ uvx: true });
+  assert.equal(uvx.status, 'warn');
+  assert.match(uvx.why, /downloads yt-dlp the first time/);
+  const none = P.judgeYtDlp({});
+  assert.equal(none.status, 'warn');
+  assert.equal(none.fixId, 'ytdlp');
+  // never required: its absence leaves the studio ok, and shows as a warning
+  const s = P.summarise([{ id: 'ytdlp', required: false, status: 'warn' }]);
+  assert.equal(s.ok, true);
+  assert.deepEqual(s.warnings, ['ytdlp']);
 });

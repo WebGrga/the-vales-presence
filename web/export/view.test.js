@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { sizeText, ago, latest, ready } from './view.js';
+import { sizeText, ago, latest, ready, offText, textLines, shownFiles } from './view.js';
 
 test('sizes and times', () => {
   assert.equal(sizeText(512), '512 B');
@@ -36,6 +36,20 @@ test('a format is ready when any of its needs is there', () => {
 
 test('formats.json: every kind the server makes, each with what it is and what opens it', () => {
   const { formats } = JSON.parse(fs.readFileSync(new URL('./formats.json', import.meta.url), 'utf8'));
-  assert.deepEqual(formats.map((f) => f.kind), ['mp4', 'srt', 'fcpxml', 'otio']);
-  for (const f of formats) assert.ok(f.name && f.what && f.opens && f.button && f.needs.length && f.icon, f.kind);
+  assert.deepEqual(formats.map((f) => f.kind), ['mp4', 'srt', 'fcpxml', 'otio', 'chapters', 'remux']);
+  for (const f of formats) assert.ok(f.name && f.what && f.opens && f.button && f.needs.length && f.icon && f.missing, f.kind);
+});
+
+test('why a format is off, the text lines, the files shown', () => {
+  assert.equal(offText({ kind: 'srt', missing: 'No words.' }, {}), 'No words.');
+  assert.equal(offText({ kind: 'chapters', missing: 'No words.' }, { chapters: 'too short' }), 'No words. (too short)');
+  assert.deepEqual(textLines('0:00 A\r\n\n1:10 B\n'), ['0:00 A', '1:10 B']);
+  assert.deepEqual(textLines(undefined), []);
+  const files = [
+    { kind: 'remux', file: 'export/media/b.mp4' }, { kind: 'remux', file: 'export/media/a.mp4' },
+    { kind: 'srt', file: 'export/x.srt', mtime: '1' }, { kind: 'srt', file: 'export/y.srt', mtime: '2' },
+  ];
+  assert.deepEqual(shownFiles({ kind: 'remux', list: true }, files).map((f) => f.file), ['export/media/a.mp4', 'export/media/b.mp4']);
+  assert.deepEqual(shownFiles({ kind: 'srt' }, files).map((f) => f.file), ['export/y.srt']);
+  assert.deepEqual(shownFiles({ kind: 'otio' }, files), []);
 });

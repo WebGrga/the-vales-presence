@@ -12,7 +12,8 @@ import { fileURLToPath } from 'node:url';
 import { fromYtDlp, channelMedian, outlierScore, mergeVideos, parseVideos, thumbUrls } from './research.js';
 import { readJson, writeJson, exists } from './files.js';
 
-const CANDIDATES = [['yt-dlp'], ['python', '-m', 'yt_dlp'], ['python3', '-m', 'yt_dlp'], ['py', '-m', 'yt_dlp'], ['uvx', 'yt-dlp']];
+// how yt-dlp can be started, in the order tried; the Setup tab's check (server/doctor/checks.js) reads this list too
+export const CANDIDATES = [['yt-dlp'], ['python', '-m', 'yt_dlp'], ['python3', '-m', 'yt_dlp'], ['py', '-m', 'yt_dlp'], ['uvx', 'yt-dlp']];
 
 function run(cmd, args, timeoutMs = 180000) {
   return new Promise((resolve) => {

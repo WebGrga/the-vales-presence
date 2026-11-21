@@ -113,13 +113,27 @@ export function listExports(dir) {
       files.push({ kind: ext, file: `export/${f}`, size: st.size, mtime: st.mtime.toISOString() });
     }
   } catch {}
+  // the .mp4 copies of recordings (remux)
+  try {
+    for (const f of fs.readdirSync(path.join(P.exportDir, 'media'))) {
+      if (!f.endsWith('.mp4') || f.endsWith('.part.mp4')) continue;
+      const st = fs.statSync(path.join(P.exportDir, 'media', f));
+      files.push({ kind: 'remux', file: `export/media/${f}`, size: st.size, mtime: st.mtime.toISOString() });
+    }
+  } catch {}
   for (const which of ['final', 'rough']) {
     try { const st = fs.statSync(P[which]); files.push({ kind: 'mp4', which, file: rel(dir, P[which]), size: st.size, mtime: st.mtime.toISOString() }); } catch {}
   }
+  const ch = chaptersFor(dir);
+  const edl = readJson(P.edl);
   const has = {
     final: fs.existsSync(P.final), rough: fs.existsSync(P.rough), edl: fs.existsSync(P.edl),
     words: fs.existsSync(P.words), captions: (readJson(P.events)?.events || []).some((e) => e.kind === 'caption'),
-    remux: Object.values(readJson(P.edl)?.sources || {}).some((s) => needsRemux(typeof s === 'string' ? s : s?.file)),
+    chapters: ch.lines.length > 0,
+    remux: Object.values(edl?.sources || {}).some((s) => needsRemux(typeof s === 'string' ? s : s?.file)),
   };
-  return { files, has };
+  // why a format that is not ready is not (only what the file names cannot say)
+  const why = {};
+  if (!has.chapters) why.chapters = ch.problems.join('; ');
+  return { files, has, why };
 }

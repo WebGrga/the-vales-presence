@@ -29,3 +29,19 @@ export function latest(files, kind) {
 export function ready(format, has) {
   return (format.needs || []).some((k) => has?.[k]);
 }
+
+// the line shown on a format that cannot be made yet: its own, plus the server's reason when it has one (has.why is `why` of GET /api/export)
+export function offText(format, why) {
+  const extra = why?.[format.kind];
+  return extra ? `${format.missing} (${extra})` : format.missing || '';
+}
+
+// a chapters file's text -> its non-empty lines (what the card shows)
+export const textLines = (text) => String(text || '').split(/\r?\n/).filter((l) => l.trim());
+
+// the files a card shows: every copy for a list format (remux), else the newest one
+export function shownFiles(format, files) {
+  if (format.list) return (files || []).filter((f) => f.kind === format.kind).sort((a, b) => a.file.localeCompare(b.file));
+  const one = latest(files, format.kind);
+  return one ? [one] : [];
+}

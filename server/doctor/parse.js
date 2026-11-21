@@ -122,6 +122,15 @@ export function judgeGpu({ gpus = [], other = '', encoder = null, cpu264 = true 
   return { status: 'fail', found: gpu, encoder: null, why: 'ffmpeg has no H.264 encoder (neither a hardware one nor libx264)' };
 }
 
+// yt-dlp prints a date version: "2025.01.15". how = the command that answered (null: none did); uvx = `uvx` itself runs.
+export const ytDlpVersion = (out) => (/^\s*(\d{4}\.\d{1,2}\.\d{1,2}\S*)/m.exec(String(out || '')) || [])[1] || null;
+
+export function judgeYtDlp({ how = null, version = null, uvx = false }) {
+  if (how) return { status: 'ok', found: `yt-dlp${version ? ` ${version}` : ''} (${how})` };
+  if (uvx) return { status: 'warn', found: 'not installed; uvx can run it', why: 'the research stage will run it through uvx, which downloads yt-dlp the first time it is used (a short wait). Install it once to skip that', fixId: 'ytdlp' };
+  return { status: 'warn', found: 'not found', why: 'only the research stage needs it (it reads video details and thumbnails; nothing is downloaded). Everything else works without it', fixId: 'ytdlp' };
+}
+
 // the SDK's accountInfo() -> logged in or not. Never returns the email.
 export function judgeAccount(info, cliVersion) {
   const cli = cliVersion ? `; claude ${cliVersion} on PATH` : '';
