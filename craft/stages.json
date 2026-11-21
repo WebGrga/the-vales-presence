@@ -1,0 +1,42 @@
+{
+  "ask": {
+    "who": "agent",
+    "title": "Ask",
+    "instruction": "Find out what the user wants from this video before any work starts. Look at what is already there first (the footage in video/footage, any script or notes in the project folder) so you only ask what you cannot see. Then ask your questions: one short message, or the AskUserQuestion tool for choices, at most five questions, each one the user can answer in a line (who it is for, what it must say, how long, what to leave out, anything they already know they want). End your turn after asking. When their answers are in, write brief.md in the project folder: what the video is, who it is for, the length, what must stay, what must go, the look, and anything they said in their own words. The stage is done when brief.md exists."
+  },
+  "make": {
+    "who": "agent",
+    "title": "Make",
+    "instruction": "Do the work this stage names and leave its files. Measure before you decide, using the engine's measurements, never a guess from how a transcript reads. Anything long (a transcription, a rough build, a handover, a proof, a final render) runs in the background with the Bash tool's run_in_background: say in one line what runs and end your turn; you are woken with the tail of its log when it ends, then check the result and go on. Never poll and never sleep. When the files exist and you have checked them, end with a short report: the files, what you measured, how long the renders took, and anything flagged for the user. Every flagged thing that has a time (a join to listen to, a word you were unsure of, a judgment call) also goes in video/out/review-items.json with this stage's id as its source, so the user finds it on the timeline and in the Cuts list."
+  },
+  "gate": {
+    "who": "user",
+    "title": "Review",
+    "instruction": "The user reviews the work and approves it, or sends it back with notes. A gate with a lock list hashes those files when approved: from then on nothing may change them."
+  },
+  "inspect": {
+    "who": "agent",
+    "title": "Inspect",
+    "instruction": "Check the work against its checklist and write inspect.md in the project folder: one line per check, each one passed or failed with the measurement or the frame that shows it (run the engine's checks, such as check_cut.py, and look at the contact sheet). Fix what you can fix without touching a locked file, run the check again, and say what you fixed. Anything you cannot fix, or that is the user's call, goes at the top of inspect.md under 'For you', and each of those points also goes in video/out/review-items.json with \"source\": \"inspect\" and \"on\": \"final\" (its time in seconds on the final, a kind such as private, pace, length or look, and the one line for the user; a point with no single time gets \"at\": null). Keep the items other stages wrote there. The stage is done when inspect.md exists."
+  },
+  "record": {
+    "who": "user",
+    "title": "Record",
+    "instruction": "The user records the footage and drops it in (video/footage), then approves the stage."
+  },
+  "options": {
+    "who": "user",
+    "title": "Pick",
+    "instruction": "The user picks from the options the stage before made (shown as cards), then approves, or sends it back for new options with notes."
+  },
+  "upload": {
+    "who": "user",
+    "title": "Upload",
+    "instruction": "The user presses Upload. Nothing goes out without that click."
+  },
+  "export": {
+    "who": "user",
+    "title": "Export",
+    "instruction": "The user exports from the Export tab (MP4, SRT, FCPXML, OTIO) and approves the stage when the files are out."
+  }
+}

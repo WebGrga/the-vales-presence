@@ -1,0 +1,36 @@
+/* The Setup tab (web/setup). Pixel chrome, readable body text. */
+.setup { max-width: 860px; margin: 0 auto; padding: 20px 24px 40px; }
+.setup-head h2 { margin: 0; font-size: 26px; color: var(--tan); }
+.setup-title { display: flex; align-items: baseline; gap: 12px; }
+.setup-os { color: var(--lgrey); font-size: 15px; }
+.setup-head p { margin: 8px 0; font-size: 14px; }
+.setup-good { color: var(--lgreen); }
+.setup-bad { color: var(--lred); }
+.setup-row-tools { display: flex; align-items: center; gap: 12px; margin: 6px 0 16px; }
+.setup-list { display: flex; flex-direction: column; gap: 8px; }
+.setup-wait { padding: 12px 0; }
+
+.setup-check {
+  display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px;
+  background: var(--night);
+  border: var(--px) solid var(--outline);
+  border-left: calc(var(--px) * 3) solid var(--dgrey);
+  box-shadow: inset var(--px) var(--px) 0 rgba(255, 255, 255, 0.05);
+  transition: background var(--ease);
+}
+.setup-check:hover { background: var(--dusk); }
+.setup-check.is-ok { border-left-color: var(--green); }
+.setup-check.is-fail { border-left-color: var(--red); }
+.setup-check.is-warn { border-left-color: var(--orange); }
+.setup-mark { margin-top: 2px; }
+.setup-body { flex: 1; min-width: 0; }
+.setup-name { display: flex; align-items: baseline; gap: 8px; font-size: 16px; color: var(--cream); }
+.setup-opt { font: 11px/1 var(--pixel); color: var(--lgrey); border: 1px solid var(--dgrey); padding: 2px 4px; }
+.setup-found { color: var(--lgrey); margin-top: 2px; word-break: break-word; }
+.setup-why { color: var(--tan); margin-top: 4px; }
+.is-fail .setup-why { color: var(--lred); }
+.setup-fix { margin-top: 8px; padding: 8px 10px; background: var(--outline); border: 1px solid var(--dgrey); }
+.setup-fix p { margin: 0 0 6px; }
+.setup-cmd { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+.setup-cmd code { flex: 1; font: 12px/1.4 var(--mono); color: var(--cream); background: var(--ink); padding: 5px 8px; overflow-x: auto; white-space: pre; user-select: all; }
+.setup-fix a { display: inline-block; margin-top: 4px; }

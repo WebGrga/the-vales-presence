@@ -1,0 +1,19 @@
+{
+  "name": "presence-engine-remotion",
+  "version": "0.1.0",
+  "description": "The engine's Remotion side: renders the overlay windows of a cut (render.mjs, render_frames.mjs). A workshop's own remotion/node_modules wins when it has one.",
+  "private": true,
+  "dependencies": {
+    "@remotion/bundler": "4.0.535",
+    "@remotion/google-fonts": "4.0.535",
+    "@remotion/renderer": "4.0.535",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "remotion": "4.0.535",
+    "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.7",
+    "typescript": "5.9.3"
+  }
+}

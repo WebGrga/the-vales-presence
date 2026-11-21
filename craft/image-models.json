@@ -1,0 +1,95 @@
+{
+  "about": "AI image models for thumbnail backgrounds, scenes and props (never faces of the user, never text: those are set in code). None is enabled here. Turn one on in data/craft/image-models.json, for example {\"models\":[{\"id\":\"flux-schnell-local\",\"enabled\":true}]}. Placeholders: {prompt} {out} {width} {height} {seed} {app}. The command runs without a shell, from the app folder. See docs/thumbnails-ai-images.md.",
+  "models": [
+    {
+      "id": "flux-schnell-local",
+      "name": "FLUX.1 schnell on this computer (diffusers)",
+      "kind": "local",
+      "enabled": false,
+      "command": "uv run --script \"{app}/server/studio/image/flux_diffusers.py\" {prompt} --out {out} --width {width} --height {height} --model schnell --seed {seed}",
+      "env": [],
+      "needs": "An NVIDIA GPU with 12 GB or more (runs on 8 GB with --offload, slowly), about 35 GB of disk for the weights on first run.",
+      "price": "free after the download",
+      "about": "Apache-2.0 model, 4 steps, good for backgrounds and props."
+    },
+    {
+      "id": "flux-dev-local",
+      "name": "FLUX.1 dev on this computer (diffusers)",
+      "kind": "local",
+      "enabled": false,
+      "command": "uv run --script \"{app}/server/studio/image/flux_diffusers.py\" {prompt} --out {out} --width {width} --height {height} --model dev --seed {seed}",
+      "env": ["HF_TOKEN"],
+      "needs": "Accept the licence on the model's Hugging Face page and set HF_TOKEN. 16 GB VRAM, or 12 GB with --offload.",
+      "price": "free after the download (non-commercial licence for the weights; read it)",
+      "about": "Sharper than schnell, 20 to 30 steps."
+    },
+    {
+      "id": "flux-comfyui",
+      "name": "FLUX through a running ComfyUI",
+      "kind": "local",
+      "enabled": false,
+      "command": "python \"{app}/server/studio/image/flux_comfy.py\" {prompt} --out {out} --width {width} --height {height} --seed {seed}",
+      "env": [],
+      "needs": "ComfyUI running on 127.0.0.1:8188 with a FLUX checkpoint (set COMFYUI_URL to use another address).",
+      "price": "free",
+      "about": "Talks to ComfyUI's HTTP API; works with full checkpoints or GGUF quantized models (--gguf)."
+    },
+    {
+      "id": "replicate-flux-schnell",
+      "name": "FLUX.1 schnell on Replicate",
+      "kind": "api",
+      "enabled": false,
+      "command": "python \"{app}/server/studio/image/api_image.py\" --provider replicate --model black-forest-labs/flux-schnell {prompt} --out {out} --width {width} --height {height}",
+      "env": ["REPLICATE_API_TOKEN"],
+      "price": "about $0.003 per image",
+      "about": "Fast and cheap; fine for backgrounds."
+    },
+    {
+      "id": "replicate-flux-dev",
+      "name": "FLUX.1 dev on Replicate",
+      "kind": "api",
+      "enabled": false,
+      "command": "python \"{app}/server/studio/image/api_image.py\" --provider replicate --model black-forest-labs/flux-dev {prompt} --out {out} --width {width} --height {height}",
+      "env": ["REPLICATE_API_TOKEN"],
+      "price": "about $0.025 per image"
+    },
+    {
+      "id": "fal-flux-schnell",
+      "name": "FLUX.1 schnell on fal",
+      "kind": "api",
+      "enabled": false,
+      "command": "python \"{app}/server/studio/image/api_image.py\" --provider fal --model fal-ai/flux/schnell {prompt} --out {out} --width {width} --height {height}",
+      "env": ["FAL_KEY"],
+      "price": "about $0.003 per megapixel"
+    },
+    {
+      "id": "fal-flux-dev",
+      "name": "FLUX.1 dev on fal",
+      "kind": "api",
+      "enabled": false,
+      "command": "python \"{app}/server/studio/image/api_image.py\" --provider fal --model fal-ai/flux/dev {prompt} --out {out} --width {width} --height {height}",
+      "env": ["FAL_KEY"],
+      "price": "about $0.025 per megapixel"
+    },
+    {
+      "id": "openai-gpt-image",
+      "name": "OpenAI gpt-image-1",
+      "kind": "api",
+      "enabled": false,
+      "command": "python \"{app}/server/studio/image/api_image.py\" --provider openai --model gpt-image-1 {prompt} --out {out} --width {width} --height {height}",
+      "env": ["OPENAI_API_KEY"],
+      "price": "about $0.02 (low) to $0.25 (high quality) per 1536x1024 image",
+      "about": "Follows long prompts well; makes 1536x1024 and is cropped to 16:9."
+    },
+    {
+      "id": "google-imagen",
+      "name": "Google Imagen (Gemini API)",
+      "kind": "api",
+      "enabled": false,
+      "command": "python \"{app}/server/studio/image/api_image.py\" --provider imagen --model imagen-4.0-generate-001 {prompt} --out {out} --width {width} --height {height}",
+      "env": ["GEMINI_API_KEY"],
+      "price": "about $0.02 (fast) to $0.06 (ultra) per image",
+      "about": "Asks for 16:9 directly."
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "id": "short",
+  "name": "Edit a Short",
+  "about": "You have footage for one vertical Short (9:16). Like Edit a video, at 1080x1920, with captions in the Shorts style.",
+  "format": "short",
+  "stages": [
+    { "id": "ask", "kind": "ask", "title": "Brief", "out": ["brief.md"],
+      "focus": "This is a Short (1080x1920, usually under 60 s). Ask about the hook, the length, and what the viewer must take away." },
+    { "id": "rough", "kind": "make", "title": "Rough cut", "heavy": true,
+      "out": ["video/out/edl.json", "video/out/rough.mp4", "video/out/cuts.json"],
+      "focus": "Make the 9:16 rough: transcribe, scan, write video/out/edl.json (1080x1920; reframe the source with faces.py reframe, or a SPLIT of screen and cam), joins.py check and snap, build_rough.py, handover.py. A Short is tight: the hook in the first two seconds, no dead air. Heavy steps run in the background." },
+    { "id": "rough-review", "kind": "gate", "title": "Rough review", "back": "rough", "lock": ["video/out/edl.json", "video/out/rough.mp4"],
+      "focus": "The user watches the rough Short and goes through its cuts. Approve & lock fixes the talk." },
+    { "id": "visuals", "kind": "make", "title": "Visuals", "heavy": true, "out": ["video/out/events.json", "video/out/final.mp4"],
+      "focus": "Dress the locked rough with Events.for_cut(cut, \"short\"): word captions (shortcaps.py), the hook text, labels from the Shorts kit, punch-ins; text inside the safe zone. run.py --proof, then run.py --final in the background." },
+    { "id": "inspect", "kind": "inspect", "title": "Inspect", "out": ["inspect.md"],
+      "focus": "check_cut.py, the contact sheet, captions against the words, every text inside the Shorts safe zone, the hook in the first two seconds." },
+    { "id": "final-review", "kind": "gate", "title": "Final review", "back": "visuals",
+      "focus": "The user watches the Short. Sending it back goes to Visuals." },
+    { "id": "export", "kind": "export", "title": "Export",
+      "focus": "MP4 and SRT from the Export tab." }
+  ]
+}

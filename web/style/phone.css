@@ -1,0 +1,56 @@
+/* The phone (under 700 px): the page lays out at the phone's own width. The tabs are a bar along the bottom; the stage
+   bar keeps its chips in one scrolling row with the buttons under it; the Edit tab shows the viewer on top and one
+   panel at a time under it (picked in the row web/editor/layout.js adds). Nothing here changes the desktop. */
+@media (max-width: 700px) {
+  body { padding-bottom: calc(54px + env(safe-area-inset-bottom, 0px)); font-size: 14px; }
+  #foot { display: none; }
+
+  /* the top bar: the tower, the project, the link light; the tabs go to the bottom */
+  #top { gap: 8px; padding: 4px 8px; }
+  .brand .display { display: none; }
+  .brand .icon { width: 24px; height: 24px; }
+  .picker { flex: 1; }
+  .picker-btn { max-width: 100%; width: 100%; }
+  .picker-name { flex: 1; text-align: left; }
+  .picker-pop { position: fixed; left: 8px !important; right: 8px; top: 48px; width: auto; max-width: none; }
+  #top > .grow, .keys-btn { display: none; }
+  .tabs {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; gap: 0; height: calc(54px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px); background: var(--dbrown); box-shadow: inset 0 var(--px) 0 var(--brown), 0 calc(-1 * var(--px)) 0 var(--outline);
+  }
+  .tab { flex: 1 1 0; min-width: 0; flex-direction: column; justify-content: center; gap: 2px; padding: 4px 0; font-size: 11px; clip-path: none; background: transparent; box-shadow: none; }
+  .tab .icon.sm { width: 20px; height: 20px; }
+  .tab-t { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+  .tab.on { background: var(--night); box-shadow: inset 0 var(--px) 0 var(--yellow); }
+
+  /* the stage bar: chips scroll, the buttons in their own row */
+  #stagebar { padding: 4px 8px; }
+  .stage-row { flex-wrap: wrap; gap: 6px; }
+  .stage-chips { flex: 1 0 100%; order: 0; }
+  .stage-sum { order: 1; font-size: 12px; }
+  .stage-btns { order: 2; margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
+  .stage-btns button { min-height: 34px; }
+  .stage-pop { position: fixed; left: 8px; right: 8px; top: auto; bottom: 62px; width: auto; max-height: 70dvh; overflow: auto; }
+  #toasts { top: 52px; left: 8px; right: 8px; transform: none; width: auto; align-items: stretch; }
+
+  /* the Edit tab: the viewer on top, one panel under it */
+  .tab-pane[data-tab=edit] .ed { display: flex; flex-direction: column; }
+  .ed > .split, .ed-left > .split, .ed-right > .split { display: none; }
+  .ed-left, .ed-right { display: contents; }
+  .ed > .p-view { order: 1; flex: none; height: min(calc(56.25vw + 40px), 46dvh); }
+  .ed > .ed-phone { order: 2; display: flex; gap: 2px; padding: 3px 4px; background: var(--ink); flex: none; overflow-x: auto; }
+  .ed-phone-b { flex: 1 0 auto; justify-content: center; font-size: 12px; min-height: 34px; padding: 4px 6px; }
+  .ed-phone-b.on { background: var(--night); color: var(--yellow); box-shadow: inset 0 calc(-1 * var(--px)) 0 var(--yellow); }
+  .ed-phone-b.ask { background: var(--orange); color: var(--outline); animation: glow 1.6s ease-in-out infinite; }
+  .ed .p-bin, .ed .p-tr, .ed .p-cuts, .ed .p-agent, .ed .p-tl { order: 3; display: none; flex: 1 1 0; min-height: 0; }
+  .ed[data-phone=bin] .p-bin, .ed[data-phone=tr] .p-tr, .ed[data-phone=cuts] .p-cuts, .ed[data-phone=agent] .p-agent, .ed[data-phone=tl] .p-tl { display: flex; }
+  .ed .panel-head .cut-keys { display: none; }
+  .v-bar { flex-wrap: wrap; row-gap: 2px; }
+  .ag-options, textarea.ag-own, .ag-q-multi { margin-left: 0; width: 100%; }
+  button.ag-opt { min-height: 40px; align-items: center; }
+  .ag-opt-box { margin-top: 0; }
+  .tl-bar { overflow-x: auto; scrollbar-width: none; }
+  .tl-bar input[type=range] { width: 90px; flex: none; }
+  .cut-acts button { min-height: 32px; }
+  .keys-layer { padding: 8px; }
+}

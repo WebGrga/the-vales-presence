@@ -1,0 +1,26 @@
+{
+  "$comment": "Sound effects and music beds for the engine; a sound is named by its file name without .wav. All were generated in code with numpy for this project (no samples, no recordings), 48 kHz (the two music beds are kept as mono 32 kHz IMA ADPCM WAV to stay small; the engine decodes every sound through ffmpeg). Licence: the repository's MIT licence.",
+  "sounds": [
+    { "name": "blip", "seconds": 0.17, "what": "a short blip, a small UI event" },
+    { "name": "buzz", "seconds": 0.28, "what": "a wrong-answer buzz" },
+    { "name": "chiptune", "seconds": 32.0, "what": "music bed, an 8-bit loop" },
+    { "name": "click", "seconds": 0.06, "what": "a mouse click" },
+    { "name": "coin", "seconds": 0.29, "what": "a coin: a cost or a win" },
+    { "name": "ding", "seconds": 0.8, "what": "a bright ding: an idea" },
+    { "name": "fall", "seconds": 0.8, "what": "a falling tone: something drops" },
+    { "name": "gameover", "seconds": 0.55, "what": "a short game-over jingle" },
+    { "name": "hit", "seconds": 0.35, "what": "an impact: a number lands" },
+    { "name": "marker", "seconds": 0.32, "what": "a marker stroke: a box or an underline draws in" },
+    { "name": "music", "seconds": 40.0, "what": "music bed, a soft lo-fi loop at 96 bpm" },
+    { "name": "pop", "seconds": 0.09, "what": "a pop: a label appears" },
+    { "name": "rise", "seconds": 0.25, "what": "a rising tone: a reveal" },
+    { "name": "roll", "seconds": 2.29, "what": "a drum roll" },
+    { "name": "roll_short", "seconds": 0.99, "what": "a short drum roll" },
+    { "name": "stamp", "seconds": 0.45, "what": "a stamp: a verdict lands" },
+    { "name": "sting", "seconds": 0.57, "what": "a short sting" },
+    { "name": "thunk", "seconds": 0.32, "what": "a dull thunk: something is set down" },
+    { "name": "tick", "seconds": 0.02, "what": "a tick" },
+    { "name": "type", "seconds": 0.7, "what": "typing on a keyboard" },
+    { "name": "whoosh", "seconds": 0.45, "what": "a whoosh: a transition" }
+  ]
+}

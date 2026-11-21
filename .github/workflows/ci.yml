@@ -1,0 +1,44 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+# What runs here: the server and screen tests (`npm test`) and every engine suite (`npm run test:engine`).
+# What does not: anything that needs a GPU, a whisper or wav2vec2 model, a Claude login, a YouTube
+# account or the Remotion render. The suites above need none of those (fake agents, tiny generated media).
+
+# `node --test` also picks up tools/test-engine.mjs, so `npm test` runs the engine suites too;
+# the separate step below keeps their output apart. Both use the uv Python through PRESENCE_PYTHON.
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      PRESENCE_PYTHON: ${{ github.workspace }}/.venv/bin/python
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+
+      - name: Python with numpy and Pillow (through uv)
+        run: |
+          uv venv --python 3.12 .venv
+          uv pip install --python .venv/bin/python numpy pillow opencv-python-headless
+
+      - name: install
+        run: npm ci
+
+      - name: npm test
+        run: npm test
+
+      - name: engine tests
+        run: npm run test:engine

@@ -1,0 +1,31 @@
+/* The Export tab (web/export). */
+.export { max-width: 900px; margin: 0 auto; padding: 20px 24px 40px; }
+.export-head h2 { margin: 0; font-size: 26px; color: var(--tan); }
+.export-head p { margin: 6px 0 16px; }
+.export-list { display: flex; flex-direction: column; gap: 10px; }
+.export-card {
+  display: flex; gap: 14px; align-items: flex-start; padding: 14px 16px;
+  background: var(--night); border: var(--px) solid var(--outline);
+  box-shadow: inset var(--px) var(--px) 0 rgba(255, 255, 255, 0.05), inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 rgba(0, 0, 0, 0.3);
+  transition: background var(--ease), opacity var(--ease);
+}
+.export-card:hover { background: var(--dusk); }
+.export-card.is-off { opacity: 0.7; }
+.export-body { flex: 1; min-width: 0; }
+.export-body p { margin: 4px 0; }
+.export-name { font-size: 17px; color: var(--cream); }
+.export-opens { color: var(--lgrey); }
+.export-opens .pixel { color: var(--tan); }
+.export-need { color: var(--orange); }
+.export-file { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--dgrey); }
+.export-dl { display: inline-flex; align-items: center; gap: 6px; color: var(--lblue); text-decoration: none; }
+.export-dl:hover { text-decoration: underline; }
+.export-time { font: 12px/1 var(--pixel); color: var(--lgreen); }
+.export-act { flex: none; align-self: center; }
+
+/* each cut Short exports like a project */
+.export-sub { margin: 26px 0 8px; font-size: 20px; color: var(--tan); }
+.export-short { margin: 0 0 16px; }
+.export-short > .export-name { margin: 0 0 6px; }
+.export-card.is-small { padding: 8px 12px; }
+.export-list[hidden] { display: none; }

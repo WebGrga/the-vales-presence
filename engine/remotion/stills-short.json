@@ -1,0 +1,6 @@
+{
+  "default": {"head": 0.7, "tail": 0.35, "settle": 0.6, "lead": 0.2, "rel": ["after", "delay"]},
+  "Pops": {"head": 1.6, "settle": 0.6},
+  "Chips": {"head": 0.7, "settle": 0.6},
+  "Flash": {"head": 0.4}
+}

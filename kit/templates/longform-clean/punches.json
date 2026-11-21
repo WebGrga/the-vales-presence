@@ -1,0 +1,7 @@
+{
+  "$comment": "Punch-ins: a crop of 1920/zoom x 1080/zoom at x, y of the rough, eased in and out by ffmpeg. a and b are seconds of the rough, or shares of the video when share is true (as in this sample). Check each crop on a still first; two punch-ins must not overlap.",
+  "punches": [
+    { "id": "Z1", "share": true, "a": 0.12, "b": 0.16, "x": 320, "y": 180, "zoom": 1.5, "what": "punch-in on the middle of the frame" },
+    { "id": "Z2", "share": true, "a": 0.45, "b": 0.49, "x": 640, "y": 360, "zoom": 1.5, "what": "punch-in on the lower right" }
+  ]
+}

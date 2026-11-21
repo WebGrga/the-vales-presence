@@ -1,0 +1,34 @@
+The Vale's Presence
+Licensed under the MIT License (see LICENSE, which holds the copyright line).
+
+This repository bundles the following third-party works, each under its own licence.
+
+Pixelify Sans (web/fonts/PixelifySans.woff2)
+  Copyright 2021 The Pixelify Sans Project Authors (https://github.com/eifetx/Pixelify-Sans)
+  SIL Open Font License, Version 1.1. Full text: web/fonts/OFL.txt
+
+Montserrat Black (kit/fonts/Montserrat-Black.ttf)
+  Copyright 2011 The Montserrat Project Authors (https://github.com/JulietaUla/Montserrat)
+  SIL Open Font License, Version 1.1. Full text: kit/fonts/OFL.txt
+  The overlay templates also load Montserrat through @remotion/google-fonts at render time (same licence).
+
+YuNet face detection model (engine/models/face_detection_yunet_2023mar.onnx)
+  Copyright (c) 2020 Shiqi Yu. From the OpenCV Zoo (https://github.com/opencv/opencv_zoo).
+  MIT License. Details: engine/models/README.txt
+
+Sound effects and music beds (kit/sounds/)
+  Generated in code for this project. Covered by this repository's MIT License.
+
+Not bundled, installed by you:
+
+Remotion (engine/remotion, installed with `npm install --prefix engine/remotion`)
+  Remotion is source-available under its own licence, not an open-source licence. It is free for
+  individuals and for companies up to a small size; larger companies need a company licence.
+  Check whether you need one at https://remotion.dev/license before you use it.
+
+ffmpeg and ffprobe
+  Not bundled. You install them yourself; they are called as separate programs from your PATH.
+  Their licence (LGPL or GPL, depending on the build) applies to the build you install.
+
+The Claude Agent SDK and Claude Code
+  Installed by npm and by you; used under Anthropic's terms with your own Claude account.

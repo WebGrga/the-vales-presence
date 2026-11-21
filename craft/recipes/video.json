@@ -1,0 +1,22 @@
+{
+  "id": "video",
+  "name": "A video from the idea",
+  "about": "From an idea to an upload: research, a plan you approve, you record, then the edit, titles and thumbnails, a look at it in a feed, and the upload button.",
+  "format": "long",
+  "stages": [
+    {"id": "ask", "kind": "ask", "title": "Brief", "out": ["brief.md"], "focus": "This is a whole video from the idea. Ask what the video is about, who it is for, what the viewer should get from it, the length, and what they have already (notes, a script, footage)."},
+    {"id": "research", "kind": "make", "title": "Research", "out": ["studio/research/videos.json"], "focus": "Find what already wins for this topic on YouTube: run the research tool for 3 to 5 viewer search phrases (skill research-titles), then study the outliers' thumbnails (skill research-thumbnails). Done when studio/research/videos.json has the videos with outlier scores and thumbnails, plus your notes and a thumbs brief."},
+    {"id": "plan", "kind": "make", "title": "Plan", "out": ["studio/plan.md"], "focus": "Write studio/plan.md (skill plan-video): the promise, three package ideas modelled on the research's outliers, the questions the package raises, the hook, the beats with what is said and shown, the ending, what to film. Keep any words the user already wrote there. A script, if the brief asks, goes in studio/script.md (skill script-video)."},
+    {"id": "plan-review", "kind": "gate", "title": "Plan review", "back": "plan", "focus": "The user reads and edits the plan on the Studio's Plan page and approves it or sends it back with notes."},
+    {"id": "record", "kind": "record", "title": "Record", "focus": "The user records from studio/plan.md (its What to film list) and drops the footage in."},
+    {"id": "rough", "kind": "make", "title": "Rough cut", "heavy": true, "out": ["video/out/edl.json", "video/out/rough.mp4", "video/out/cuts.json"], "focus": "Make the rough cut from the footage, following studio/plan.md for the order of the beats: transcribe, scan, write video/out/edl.json with a cut_before on every cut, joins.py check and snap, build_rough.py, handover.py. Heavy steps run in the background."},
+    {"id": "rough-review", "kind": "gate", "title": "Rough review", "back": "rough", "lock": ["video/out/edl.json", "video/out/rough.mp4"], "focus": "The user watches the rough and goes through the Cuts list. Approve & lock fixes the talk."},
+    {"id": "visuals", "kind": "make", "title": "Visuals", "heavy": true, "out": ["video/out/events.json", "video/out/final.mp4"], "focus": "Dress the locked rough: events.json with the Events builder (times only from rough-words.json), run.py --proof, then run.py --final in the background. Never touch edl.json or rough.mp4."},
+    {"id": "inspect", "kind": "inspect", "title": "Inspect", "out": ["inspect.md"], "focus": "check_cut.py, the contact sheet, captions against the words, the plan's beats all there."},
+    {"id": "final-review", "kind": "gate", "title": "Final review", "back": "visuals", "focus": "The user watches final.mp4. Sending it back goes to Visuals."},
+    {"id": "titles", "kind": "make", "title": "Titles", "out": ["studio/titles.json"], "focus": "Write 4 to 8 title options into studio/titles.json (skill title-options), modelled on the outliers in studio/research/videos.json and true to what the final cut shows. Keep the user's picks, notes, edits and own titles. Then draft studio/upload.json (skill upload-youtube): a description with chapters from the final cut's real times, tags, private visibility; never upload."},
+    {"id": "thumbnails", "kind": "make", "title": "Thumbnails", "out": ["studio/thumbs/options.json"], "focus": "Make 2 to 4 thumbnail options (skill thumbnail-options): composed in code with server/studio/thumb_compose.py from frames of video/out/final.mp4, the user's own photos and big words; an AI background only from a model the user enabled. Never an AI face of the user, never AI text. Check each at phone size (--small). List them in studio/thumbs/options.json, each with the title it was made for."},
+    {"id": "feed", "kind": "options", "title": "Feed", "back": "thumbnails", "focus": "The user stars titles and thumbnails, compares the pairs on the Studio's Feed page between the real researched videos (light and dark, desktop and phone), picks one package, then approves."},
+    {"id": "upload", "kind": "upload", "title": "Upload", "back": "titles", "focus": "The user checks studio/upload.json on the Upload page and presses Upload. The agent never uploads."}
+  ]
+}

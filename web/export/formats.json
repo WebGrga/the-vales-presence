@@ -1,0 +1,29 @@
+{
+  "$comment": "What the Export tab offers. needs: a key of GET /api/export/:id 'has' (any one of them is enough). opens: which programs read the file.",
+  "formats": [
+    {
+      "kind": "mp4", "name": "Video (MP4)", "icon": "film", "needs": ["final", "rough"],
+      "what": "The finished video with its visuals, ready to upload. Before the visuals are done this is the approved rough.",
+      "opens": "Every player, YouTube and every editor.",
+      "button": "Get the video"
+    },
+    {
+      "kind": "srt", "name": "Subtitles (SRT)", "icon": "text", "needs": ["words", "captions"],
+      "what": "What is said, timed to the video: the video's own caption lines when they cover the talk, else every spoken word in short lines. Fillers are left out.",
+      "opens": "YouTube Studio (Subtitles, Upload file, With timing), video players, and every editor.",
+      "button": "Make subtitles"
+    },
+    {
+      "kind": "fcpxml", "name": "Edit list (FCPXML 1.10)", "icon": "layers", "needs": ["edl"],
+      "what": "The approved cut as a timeline: one clip per kept stretch, linked to your original footage, so you can keep editing it by hand. The visuals are not in it.",
+      "opens": "Final Cut Pro 10.6 or newer (File, Import, XML) and DaVinci Resolve (File, Import, Timeline).",
+      "button": "Make FCPXML"
+    },
+    {
+      "kind": "otio", "name": "Edit list (OpenTimelineIO)", "icon": "layers", "needs": ["edl"],
+      "what": "The same cut as an OpenTimelineIO timeline: one video track and one audio track, linked to your footage.",
+      "opens": "DaVinci Resolve 18.5 or newer (File, Import, Timeline) and any tool built on OpenTimelineIO.",
+      "button": "Make OTIO"
+    }
+  ]
+}

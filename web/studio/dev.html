@@ -1,0 +1,38 @@
+<!doctype html>
+<!-- The Studio tab alone, for working on it without the whole screen: /studio/dev.html?p=<project id> -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Studio (dev)</title>
+<link rel="stylesheet" href="../style/base.css">
+<style>body { overflow: hidden; } #tab { height: 100vh; } #toast { position: fixed; right: 12px; bottom: 12px; background: #33304a; color: #f5efe0; padding: 8px 12px; font: 13px system-ui; opacity: 0; transition: opacity .3s; } #toast.on { opacity: 1; }</style>
+</head>
+<body>
+<div id="tab"></div><div id="toast"></div>
+<script type="module">
+import { mount } from './index.js';
+const id = new URLSearchParams(location.search).get('p') || 'studio-demo';
+const subs = new Map();
+const on = (type, fn) => { if (!subs.has(type)) subs.set(type, new Set()); subs.get(type).add(fn); return () => subs.get(type).delete(fn); };
+const emit = (m) => { for (const fn of subs.get(m.type) || []) fn(m); };
+let project = { id, title: id };
+async function api(path, body) {
+  const r = await fetch(path, body === undefined ? {} : { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => null);
+  if (!r.ok) throw new Error(j?.error || r.statusText);
+  return j;
+}
+try { project = await api(`/api/projects/${id}`); } catch {}
+const toast = (t) => { const el = document.getElementById('toast'); el.textContent = t; el.classList.add('on'); setTimeout(() => el.classList.remove('on'), 3000); };
+function ws() {
+  const s = new WebSocket(`ws://${location.host}/ws`);
+  s.onmessage = (e) => { try { const m = JSON.parse(e.data); if (m.type === 'toast') toast(m.text); emit(m); } catch {} };
+  s.onclose = () => setTimeout(ws, 1500);
+}
+ws();
+window.studioApp = { api, on, project: () => project, select: () => {}, toast, media: (p) => `/api/media/${id}/${p}` };
+mount(document.getElementById('tab'), window.studioApp);
+</script>
+</body>
+</html>

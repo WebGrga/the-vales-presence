@@ -1,0 +1,11 @@
+node_modules/
+data/
+__pycache__/
+*.pyc
+.venv/
+*.mp4
+*.mkv
+*.mov
+*.wav.cache
+.env
+presence.local.json

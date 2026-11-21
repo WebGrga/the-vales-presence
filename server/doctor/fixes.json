@@ -1,0 +1,47 @@
+{
+  "$comment": "One plain fix per check and OS (win, mac, linux; 'all' when it is the same everywhere). The Setup tab shows the one for this machine. Commands are run by the user, never by the app.",
+  "node": {
+    "win": { "text": "Install Node 22 or newer, then open a new terminal.", "cmds": ["winget install OpenJS.NodeJS.LTS"] },
+    "mac": { "text": "Install Node 22 or newer with Homebrew.", "cmds": ["brew install node"] },
+    "linux": { "text": "Install Node 22 from NodeSource (Debian / Ubuntu).", "cmds": ["curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -", "sudo apt install -y nodejs"] },
+    "link": "https://nodejs.org"
+  },
+  "ffmpeg": {
+    "win": { "text": "Install ffmpeg (the full build has the GPU encoders), then open a new terminal so PATH has it.", "cmds": ["winget install Gyan.FFmpeg"] },
+    "mac": { "text": "Install ffmpeg with Homebrew (it includes VideoToolbox).", "cmds": ["brew install ffmpeg"] },
+    "linux": { "text": "Install ffmpeg from your distribution.", "cmds": ["sudo apt install -y ffmpeg"] },
+    "link": "https://ffmpeg.org/download.html"
+  },
+  "uv": {
+    "win": { "text": "Install uv, the Python runner for the speech-to-text scripts.", "cmds": ["winget install astral-sh.uv"] },
+    "mac": { "text": "Install uv with Homebrew.", "cmds": ["brew install uv"] },
+    "linux": { "text": "Install uv with its own installer.", "cmds": ["curl -LsSf https://astral.sh/uv/install.sh | sh"] },
+    "link": "https://docs.astral.sh/uv/"
+  },
+  "python": {
+    "win": { "text": "Install Python 3 and the two packages the engine uses. Tick \"Add python.exe to PATH\" if the installer asks.", "cmds": ["winget install Python.Python.3.12", "python -m pip install numpy pillow"] },
+    "mac": { "text": "Install Python 3 with numpy and Pillow from Homebrew.", "cmds": ["brew install python numpy pillow"] },
+    "linux": { "text": "Install Python 3 with numpy and Pillow from your distribution.", "cmds": ["sudo apt install -y python3 python3-numpy python3-pil"] },
+    "link": "https://www.python.org/downloads/"
+  },
+  "gpu": {
+    "win": { "text": "Optional. Update your graphics driver: NVIDIA, Intel and AMD cards encode on the GPU. Without one everything still works on the CPU, only slower.", "cmds": [] },
+    "mac": { "text": "Optional. Apple's VideoToolbox is used when ffmpeg has it (Homebrew's ffmpeg does). Without it the CPU encodes, only slower.", "cmds": ["brew reinstall ffmpeg"] },
+    "linux": { "text": "Optional. Install the NVIDIA driver (or VA-API for Intel) so ffmpeg can encode on the GPU. Without one the CPU encodes, only slower.", "cmds": ["sudo ubuntu-drivers autoinstall"] }
+  },
+  "claude": {
+    "win": { "text": "Install Claude Code, run it once and log in with your Claude account. The app runs on that login.", "cmds": ["irm https://claude.ai/install.ps1 | iex", "claude"] },
+    "mac": { "text": "Install Claude Code, run it once and log in with your Claude account. The app runs on that login.", "cmds": ["curl -fsSL https://claude.ai/install.sh | bash", "claude"] },
+    "linux": { "text": "Install Claude Code, run it once and log in with your Claude account. The app runs on that login.", "cmds": ["curl -fsSL https://claude.ai/install.sh | bash", "claude"] },
+    "link": "https://docs.claude.com/en/docs/claude-code/setup"
+  },
+  "sdk": {
+    "all": { "text": "Install the app's two dependencies in the repository folder.", "cmds": ["npm install"] }
+  },
+  "disk": {
+    "all": { "text": "Free some space on the drive that holds data/ (or set PRESENCE_DATA to a folder on a bigger drive). Old projects' video/out/work folders are caches and can be deleted.", "cmds": [] }
+  },
+  "remotion": {
+    "all": { "text": "Install the overlay renderer once. Its first render also downloads a headless Chrome by itself.", "cmds": ["cd engine/remotion", "npm install"] }
+  }
+}

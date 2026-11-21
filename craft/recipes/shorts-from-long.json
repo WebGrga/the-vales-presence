@@ -1,0 +1,18 @@
+{
+  "id": "shorts-from-long",
+  "name": "Shorts from a long video",
+  "about": "You have a long video. The agent picks the moments that stand alone, you choose which to make, it cuts each as a 9:16 Short, you review them, and you export.",
+  "format": "short",
+  "stages": [
+    { "id": "pick", "kind": "make", "title": "Pick moments", "out": ["studio/shorts/picks.json"],
+      "focus": "Find the moments of the long video that work alone as Shorts (a hook in the first two seconds, one idea, a payoff, 20 to 60 s). The source is video/out/rough.mp4 when there is one (its words are video/out/rough-words.json: use them, never transcribe again; a project made from an edit has both linked in), else video/out/final.mp4, else the footage (transcribe it once if no word file exists). Times in the picks are seconds on that source. Write studio/shorts/picks.json: { \"picks\": [ { \"id\": \"s1\", \"src\": \"rough, a source key of the edit list, or a file relative to video/\", \"from\": seconds, \"to\": seconds, \"title\": \"...\", \"hook\": \"the first line\", \"why\": \"...\" } ] }, five to ten picks, best first." },
+    { "id": "pick-review", "kind": "options", "title": "Choose", "back": "pick",
+      "focus": "The user chooses which picks to make (the Shorts tab marks them \"chosen\": true in studio/shorts/picks.json) and approves." },
+    { "id": "cut", "kind": "make", "title": "Cut each", "heavy": true, "out": ["shorts/"],
+      "focus": "Cut every chosen pick in studio/shorts/picks.json as its own 9:16 Short, each in its own workshop shorts/<pick id>/video/ (footage/, out/; run the engine with --video shorts/<pick id>/video): the edit list, the rough, captions in the Shorts style and the final (out/final.mp4). Put the source in the Short's footage/ as a hard link (never a copy of a big file); when video/out/rough-words.json is there, take each Short's words from it instead of transcribing again. Heavy renders run in the background, one Short after the other. Anything the user should check in a Short goes in shorts/<pick id>/video/out/review-items.json (times on that Short). A Short sent back with notes: cut only the Shorts the notes name." },
+    { "id": "review", "kind": "gate", "title": "Review", "back": "cut",
+      "focus": "The user watches every Short and approves, or sends them back with notes (name the Short)." },
+    { "id": "export", "kind": "export", "title": "Export",
+      "focus": "Each Short's MP4 and SRT from the Export tab." }
+  ]
+}

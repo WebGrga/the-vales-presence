@@ -1,0 +1,115 @@
+/* The app's ground: the palette (mirrors web/style/palette.json), the pixel font, pixel borders, buttons and inputs.
+   Pixel style is for the chrome only: video, thumbnails and waveforms are never pixelated. */
+@font-face {
+  font-family: 'Pixelify Sans';
+  src: url('../fonts/PixelifySans.woff2') format('woff2');
+  font-weight: 400 700;
+  unicode-range: U+0000-002F, U+003A-10FFFF; /* digits 0-9 fall back to a clean font: the pixel ones are hard to tell apart */
+  font-display: swap;
+}
+
+:root {
+  --outline: #1b1b2a; --ink: #2a2438; --night: #222034; --dusk: #33304a;
+  --dbrown: #4a3328; --brown: #7a5134; --lbrown: #a9754a; --tan: #d9a877; --wall: #e8d6b3; --cream: #f5efe0;
+  --dred: #8c2f2f; --red: #c44d3a; --lred: #e07a5a;
+  --dblue: #2b3f7a; --blue: #3f6fb5; --lblue: #6fa3e0;
+  --dgreen: #2f5a2e; --green: #4e8a3e; --lgreen: #86c05a;
+  --yellow: #e8c547; --orange: #d98a2b;
+  --dgrey: #4c4c5a; --grey: #7d7d8c; --lgrey: #b8b8c4; --white: #ffffff;
+  --purple: #6b3f8c; --lpurple: #9b6fc0; --teal: #1f5f5a; --pink: #e59ab0;
+
+  --px: 2px;                     /* one art pixel at 2x */
+  --text: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  /* The pixel font is for the brand and big headings only (.display). At label sizes it turns C into O and G into 6
+     ("Outs", "Olaude Oode"), so every label, button, chip and body text uses the clean font: --pixel (the name older
+     styles use for their labels) is that clean font now. The pixel look stays in the frames, notches and icons. */
+  --display: 'Pixelify Sans', 'Segoe UI', system-ui, sans-serif;
+  --pixel: var(--text);
+  --mono: ui-monospace, 'Cascadia Mono', Consolas, Menlo, monospace;
+  --ease: 0.3s ease;
+  --notch: polygon(var(--px) 0, calc(100% - var(--px)) 0, 100% var(--px), 100% calc(100% - var(--px)), calc(100% - var(--px)) 100%, var(--px) 100%, 0 calc(100% - var(--px)), 0 var(--px));
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--outline); color: var(--cream);
+  font: 13px/1.45 var(--text);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4, .pixel { font-family: var(--pixel); font-weight: 650; letter-spacing: 0.01em; }
+.display { font-family: var(--display); font-weight: 500; letter-spacing: 0.02em; }
+a { color: var(--lblue); }
+[hidden] { display: none !important; }
+.muted { color: var(--lgrey); }
+.dim { color: var(--grey); }
+
+/* icons: 16 px art drawn at 2x, or 1x where space is tight */
+.icon { width: 32px; height: 32px; image-rendering: pixelated; flex: none; vertical-align: middle; pointer-events: none; }
+.icon.sm { width: 16px; height: 16px; }
+video, canvas.smooth, img.thumb { image-rendering: auto; }
+
+/* a pixel frame: a dark outline, a light top-left edge and a dark bottom-right edge */
+.px-frame {
+  border: var(--px) solid var(--outline);
+  box-shadow: inset var(--px) var(--px) 0 rgba(255, 255, 255, 0.07), inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 rgba(0, 0, 0, 0.3);
+}
+
+/* buttons: wooden, notched corners, pressed down on click */
+button, .btn {
+  font: 600 13px/1.1 var(--text); color: var(--cream);
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 10px; min-height: 30px;
+  background: var(--brown); border: 0; cursor: pointer;
+  clip-path: var(--notch);
+  box-shadow: inset 0 var(--px) 0 var(--lbrown), inset 0 calc(-1 * var(--px) * 2) 0 var(--dbrown);
+  transition: background var(--ease), filter var(--ease), transform 0.08s;
+  white-space: nowrap;
+}
+button:hover:not(:disabled) { background: var(--lbrown); }
+button:active:not(:disabled) { transform: translateY(var(--px)); box-shadow: inset 0 var(--px) 0 var(--lbrown); }
+button:disabled { filter: grayscale(0.8) brightness(0.7); cursor: default; }
+button:focus-visible { outline: var(--px) solid var(--yellow); outline-offset: 1px; }
+button.icon-only { padding: 1px; min-height: 0; background: transparent; box-shadow: none; clip-path: none; }
+button.icon-only:hover:not(:disabled) { background: rgba(255, 255, 255, 0.08); }
+button.icon-only.on { background: rgba(232, 197, 71, 0.18); }
+button.go { background: var(--green); box-shadow: inset 0 var(--px) 0 var(--lgreen), inset 0 calc(-1 * var(--px) * 2) 0 var(--dgreen); }
+button.go:hover:not(:disabled) { background: #5c9c4a; }
+button.warn { background: var(--red); box-shadow: inset 0 var(--px) 0 var(--lred), inset 0 calc(-1 * var(--px) * 2) 0 var(--dred); }
+button.warn:hover:not(:disabled) { background: #d25a46; }
+button.calm { background: var(--dusk); box-shadow: inset 0 var(--px) 0 var(--dgrey), inset 0 calc(-1 * var(--px) * 2) 0 var(--outline); }
+button.calm:hover:not(:disabled) { background: var(--dgrey); }
+button.on { background: var(--blue); box-shadow: inset 0 var(--px) 0 var(--lblue), inset 0 calc(-1 * var(--px) * 2) 0 var(--dblue); }
+button.small { font-size: 12px; min-height: 24px; padding: 3px 8px; }
+button.ask { background: var(--orange); color: var(--outline); box-shadow: inset 0 var(--px) 0 var(--yellow), inset 0 calc(-1 * var(--px) * 2) 0 var(--brown); animation: ask-pulse 2.4s ease-in-out infinite; }
+button.ask:hover:not(:disabled) { background: #e89a3a; }
+@keyframes ask-pulse { 50% { box-shadow: inset 0 var(--px) 0 var(--yellow), inset 0 calc(-1 * var(--px) * 2) 0 var(--brown), 0 0 0 3px rgba(232, 197, 71, 0.35); } }
+
+/* segmented choices (Before | After | A/B) */
+.seg { display: inline-flex; gap: 0; }
+.seg button { clip-path: none; box-shadow: inset 0 var(--px) 0 var(--dgrey), inset 0 calc(-1 * var(--px) * 2) 0 var(--outline); background: var(--dusk); border-right: var(--px) solid var(--outline); }
+.seg button:first-child { clip-path: polygon(var(--px) 0, 100% 0, 100% 100%, var(--px) 100%, 0 calc(100% - var(--px)), 0 var(--px)); }
+.seg button:last-child { border-right: 0; clip-path: polygon(0 0, calc(100% - var(--px)) 0, 100% var(--px), 100% calc(100% - var(--px)), calc(100% - var(--px)) 100%, 0 100%); }
+.seg button.on { background: var(--blue); box-shadow: inset 0 var(--px) 0 var(--lblue), inset 0 calc(-1 * var(--px) * 2) 0 var(--dblue); }
+
+input[type=text], input:not([type]), textarea, select {
+  font: 13px/1.4 var(--text); color: var(--cream);
+  background: var(--outline); border: var(--px) solid var(--dgrey); padding: 6px 8px;
+  transition: border-color var(--ease);
+}
+input:focus, textarea:focus, select:focus { outline: none; border-color: var(--yellow); }
+textarea { resize: vertical; width: 100%; }
+input[type=range] { accent-color: var(--yellow); }
+
+/* scrollbars, squared */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--outline); }
+::-webkit-scrollbar-thumb { background: var(--dgrey); border: var(--px) solid var(--outline); }
+::-webkit-scrollbar-thumb:hover { background: var(--grey); }
+* { scrollbar-color: var(--dgrey) var(--outline); }
+
+.kbd { font: 12px/1 var(--mono); padding: 1px 4px; border: 1px solid var(--dgrey); border-bottom-width: 2px; color: var(--lgrey); }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
