@@ -8,7 +8,6 @@ import { keepDraft, takeDraft, settleDraft, saver } from './persist.js';
 import { empty } from './cards.js';
 import { marksRow } from './feed-marks.js';
 import { judgeControl, judgePanel, resultFor } from './judge-ui.js';
-import { betSection } from './bet.js';
 
 const hue = (s) => { let x = 0; for (const c of String(s)) x = (x * 31 + c.charCodeAt(0)) % 360; return x; };
 
@@ -25,12 +24,11 @@ export function feedSection(ctx) {
   channel.addEventListener('input', () => { keepDraft(ctx.id, 'feed.channel', channel.value); chSave.push(channel.value); });
   const stage = h('div.st-feedstage');
   const panel = h('div.st-judgebox');
-  const bet = betSection(ctx);
   const judge = judgeControl(ctx, () => data, () => ourPairs(data.titles, data.thumbs));
   const getMarks = () => data?.pack?.marks || {};
   const setMarks = (m) => { if (data) data.pack = { ...(data.pack || {}), marks: m }; };
   const pairs = h('div.st-pairs');
-  const el = h('section.st-pane', h('header.st-head', h('h2', 'Feed'), h('span.dim', 'your options among the real videos'), h('span.st-grow'), judge.el, channel, theme, width, shuffle, markBtn), panel, stage, pairs, bet.el);
+  const el = h('section.st-pane', h('header.st-head', h('h2', 'Feed'), h('span.dim', 'your options among the real videos'), h('span.st-grow'), judge.el, channel, theme, width, shuffle, markBtn), panel, stage, pairs);
   let first = true;
 
   function tile(t, f) {
@@ -45,18 +43,16 @@ export function feedSection(ctx) {
     const res = ours ? resultFor(data.pack?.judge, t.key) : null;
     const hasBar = Number.isFinite(data.pack?.judge?.bar);
     return h('div.yt-tile' + (ours ? '.ours' : '') + (ours && mark ? '.marked' : ''), { 'data-key': ours ? t.key : v.id },
-      h('div.yt-thumb', h('img', { src, alt: '', loading: 'lazy', draggable: false }), dur ? h('span.yt-dur', dur) : '',
-        res && res.score !== null ? h('span.yt-score' + (hasBar && res.score >= data.pack.judge.bar ? '.pass' : ''), { title: hasBar ? `Judges ${res.score}, the bar ${data.pack.judge.bar}` : 'The judges' }, `${res.score}`) : ''),
+      h('div.yt-thumb', h('img', { src, alt: '', loading: 'lazy', draggable: false }), dur ? h('span.yt-dur', dur) : ''),
       h('div.yt-row',
         h('span.yt-av', { style: `--h:${hue(ch)}` }, (ch[0] || '?').toUpperCase()),
-        h('div.yt-txt', h('div.yt-title', title), h('div.yt-sub', ch), h('div.yt-sub', ours ? h('span.yt-new', 'New') : line))),
+        h('div.yt-txt', h('div.yt-title', title), h('div.yt-sub', ch), h('div.yt-sub', ours ? h('span.yt-new', 'New') : line, res && res.score !== null ? h('span.yt-score' + (hasBar && res.score >= data.pack.judge.bar ? '.pass' : ''), { title: hasBar ? `Judges ${res.score}, the bar ${data.pack.judge.bar}` : 'The judges' }, `${res.score}`) : ''))),
       mk.el);
   }
 
   function render(dt) {
     data = dt;
     const f = dt.feed;
-    bet.render(dt);
     if (first) { first = false; const d = takeDraft(ctx.id, 'feed.channel'); channel.value = d && d.value !== f.channel ? d.value : f.channel; if (d && d.value !== f.channel) chSave.push(d.value); }
     for (const [box, v] of [[theme, f.theme], [width, f.width]]) for (const b of box.children) b.classList.toggle('on', b.dataset.v === v);
     markBtn.classList.toggle('on', mark); markBtn.classList.toggle('calm', !mark);
@@ -85,5 +81,5 @@ export function feedSection(ctx) {
   }
 
   judge.resume();
-  return { el, render, flush: () => Promise.all([chSave.flush(), bet.flush()]), unmount: () => judge.stop() };
+  return { el, render, flush: () => chSave.flush(), unmount: () => judge.stop() };
 }

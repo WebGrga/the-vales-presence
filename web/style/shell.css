@@ -74,6 +74,14 @@ button.keys-btn { width: 28px; height: 28px; justify-content: center; font: 700 
 .stage-chips.compact .chip:not(.cur) .icon, .stage-chips.tiny .chip:not(.cur) .icon { grid-row: auto; }
 .stage-chips.compact .chip-join, .stage-chips.tiny .chip-join { width: 4px; }
 .stage-chips.tiny .chip:not(.cur) .chip-n { opacity: 1; }
+/* smart: done stages and the later ones are a tick or icon and a number, the current one in full, the next one by its short name */
+.stage-chips.smart .chip:not(.cur):not(.next) .chip-full, .stage-chips.smart .chip:not(.cur) .chip-full { display: none; }
+.stage-chips.smart .chip.next .chip-s { display: inline; }
+.stage-chips.smart .chip:not(.cur) .chip-m { display: none; }
+.stage-chips.smart .chip:not(.cur) { grid-template-rows: auto; padding-right: 6px; }
+.stage-chips.smart .chip:not(.cur) .icon { grid-row: auto; }
+.stage-chips.smart .chip-join { width: 4px; }
+.stage-chips.smart .chip:not(.cur):not(.next) .chip-n { opacity: 1; }
 .chip.todo { opacity: 0.6; }
 .chip.link { cursor: pointer; }
 .chip.link:hover { filter: brightness(1.15); }
@@ -114,13 +122,14 @@ button.keys-btn { width: 28px; height: 28px; justify-content: center; font: 700 
 #foot a { color: var(--tan); text-decoration: none; }
 #foot a:hover { color: var(--yellow); }
 
-/* toasts: at the top in the middle, under the stage bar: never over the timeline, the picker or the stage dialogs */
-#toasts { position: fixed; left: 50%; transform: translateX(-50%); top: 96px; z-index: 50; display: flex; flex-direction: column; gap: 6px; align-items: center; pointer-events: none; width: max-content; max-width: calc(100vw - 28px); }
+/* toasts: in the bottom right corner above the footer line, where no header, tab or button sits; the ones that come together are one */
+#toasts { position: fixed; right: 14px; bottom: 30px; z-index: 50; display: flex; flex-direction: column; gap: 6px; align-items: flex-end; pointer-events: none; width: max-content; max-width: calc(100vw - 28px); }
 .toast {
   pointer-events: auto; cursor: pointer; max-width: min(440px, calc(100vw - 28px)); padding: 8px 12px; background: var(--night); color: var(--cream);
   border: var(--px) solid var(--outline); box-shadow: inset 0 var(--px) 0 var(--dgrey), 4px 4px 0 rgba(0, 0, 0, 0.4);
-  border-left: 6px solid var(--blue); opacity: 0; transform: translateY(-6px); transition: opacity var(--ease), transform var(--ease);
+  border-left: 6px solid var(--blue); opacity: 0; transform: translateY(6px); transition: opacity var(--ease), transform var(--ease);
 }
+.toast > div + div { margin-top: 4px; padding-top: 4px; border-top: var(--px) solid var(--dgrey); }
 .toast.in { opacity: 1; transform: none; }
 .toast.ok { border-left-color: var(--lgreen); }
 .toast.warn { border-left-color: var(--orange); }

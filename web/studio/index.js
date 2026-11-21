@@ -81,8 +81,14 @@ export function mount(el, app) {
 
   function badges() {
     const n = (doc) => doc.options.filter((o) => !o.hidden).length;
-    const val = { research: data.research.videos.length || '', titles: data.titles.picked ? '✓' : n(data.titles) || '', thumbs: data.thumbs.picked ? '✓' : n(data.thumbs) || '', feed: data.feed.picked ? '✓' : '', upload: data.upload.state.status === 'done' && !data.upload.state.dry ? '✓' : '', plan: data.plan.text ? '•' : '', script: data.script.text ? '•' : '' };
-    for (const b of nav.children) b.querySelector('.st-badge').textContent = val[b.dataset.page] ?? '';
+    const val = { research: data.research.videos.length || '', titles: data.titles.picked ? '✓' : n(data.titles) || '', thumbs: data.thumbs.picked ? '✓' : n(data.thumbs) || '', feed: data.feed.picked ? '✓' : '', upload: data.pack?.betState?.phase === 'due' ? '!' : data.upload.state.status === 'done' && !data.upload.state.dry ? '✓' : '', plan: data.plan.text ? '•' : '', script: data.script.text ? '•' : '' };
+    for (const b of nav.children) {
+      const badge = b.querySelector('.st-badge');
+      badge.textContent = val[b.dataset.page] ?? '';
+      const due = b.dataset.page === 'upload' && val.upload === '!';
+      badge.classList.toggle('due', due);
+      badge.title = due ? 'A week has passed since the upload: check your bet' : '';
+    }
   }
 
   // where the project is, when it is at a studio stage (the shell's stage bar has Approve and Send back)

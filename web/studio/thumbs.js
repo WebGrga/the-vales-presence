@@ -42,6 +42,7 @@ export function thumbsSection(ctx) {
   // E46: every option at 160 x 90, the size a crowded feed gives it, side by side on a light and a dark page
   function renderSheet(doc) {
     const vis = doc.options.filter((o) => !o.hidden);
+    sheet.hidden = !vis.length; // no thumbnails, no contact sheet (an empty fold would read "Details")
     if (!vis.length) { sheet.replaceChildren(); return; }
     const strip = (cls) => h('div.st-sheet-strip.' + cls, ...vis.map((o) => h('figure', h('img', { src: fileUrl(ctx.id, `thumbs/${o.file}`, o.mtime), alt: o.id, width: 160, height: 90, draggable: false }), h('figcaption', o.id))));
     sheet.replaceChildren(h('summary', `Contact sheet at 160×90 (${vis.length})`),

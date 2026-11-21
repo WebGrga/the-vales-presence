@@ -27,12 +27,14 @@ export function mountStageBar(el, app) {
 
   // the widths the chips need in each mode, then the mode that fits; the current chip scrolled into view
   function fit() {
-    row.classList.remove('compact', 'tiny');
+    row.classList.remove('compact', 'smart', 'tiny');
     const full = row.scrollWidth;
     row.classList.add('compact');
     const compact = row.scrollWidth;
-    row.classList.remove('compact');
-    mode = chipMode({ full, compact }, row.clientWidth);
+    row.classList.replace('compact', 'smart');
+    const smart = row.scrollWidth;
+    row.classList.remove('smart');
+    mode = chipMode({ full, compact, smart }, row.clientWidth);
     if (mode !== 'full') row.classList.add(mode);
     more();
     const cur = row.querySelector('.chip.cur');
@@ -57,10 +59,11 @@ export function mountStageBar(el, app) {
     const asking = !!app.waiting?.asking;
     const cs = chips(p, recipeOf(p), { asking });
     const a = actions(p, cs);
+    const curAt = p.done ? -1 : cs.findIndex((c) => c.id === p.at);
     row.replaceChildren(...cs.map((c, n) => {
       const isCur = c.id === p.at && !p.done;
       const tip = [`${c.n}. ${c.title}`, STATE_WORD[c.state] || '', c.lock ? 'approving locks the talk' : '', [fmtMs(c.ms), fmtCost(c.cost)].filter(Boolean).join(' · ')].filter(Boolean).join(' — ') + (c.note ? '\n' + c.note : '');
-      const chip = h(`div.chip.${c.state}${isCur ? '.cur' : ''}`, { title: tip, role: 'listitem', 'aria-current': isCur ? 'step' : null },
+      const chip = h(`div.chip.${c.state}${isCur ? '.cur' : ''}${n === curAt + 1 && curAt >= 0 ? '.next' : ''}`, { title: tip, role: 'listitem', 'aria-current': isCur ? 'step' : null },
         icon(c.state === 'done' ? 'keep' : c.state === 'halted' ? 'cross' : c.state === 'ask' ? 'question' : c.state === 'queued' ? 'clock' : (c.lock ? 'lock' : KIND_ICON[c.kind] || 'film'), true),
         h('span.chip-t', h('span.chip-n', `${c.n}`), h('span.chip-full', c.title), h('span.chip-s', c.short)),
         chipMeta(c));

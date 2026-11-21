@@ -15,6 +15,9 @@ export function chips(project, recipe, opts = {}) {
   const ps = project?.stages || {};
   const list = recipe?.stages?.length ? recipe.stages : Object.keys(ps).map((id) => ({ id, title: id }));
   const queue = project?.view?.queued || null; // the server's { stage, behind: [{ title, stageTitle }], text }
+  // two stages with the same short name (Plan and Plan review) are told apart by their whole titles
+  const shorts = list.map((st) => st.short || shortTitle(st.title || title(st.id)));
+  const twice = (i) => shorts.filter((x) => x === shorts[i]).length > 1;
   return list.map((st, i) => {
     const s = ps[st.id] || {}, raw = String(s.status || '');
     const here = project?.at === st.id;
@@ -28,7 +31,7 @@ export function chips(project, recipe, opts = {}) {
     else if (here) state = USER_KINDS.has(st.kind) ? 'you' : 'ready';
     const t = st.title || title(st.id);
     return {
-      id: st.id, n: i + 1, title: t, short: st.short || shortTitle(t), kind: st.kind || '', state,
+      id: st.id, n: i + 1, title: t, short: twice(i) && !st.short ? (t.length > 14 ? t.slice(0, 13) + '…' : t) : shorts[i], kind: st.kind || '', state,
       ms: Number(s.ms) || 0, cost: Number(s.cost) || 0, started: Number(s.started) || 0,
       lock: Array.isArray(st.lock) && st.lock.length > 0, heavy: !!st.heavy, note: s.note || '',
       behind: here && state === 'queued' ? behindOf(queue?.behind || s.queued?.behind) : null,
@@ -48,19 +51,21 @@ export function behindOf(list) {
 
 export const title = (id) => String(id || '').replace(/[-_]+/g, ' ').replace(/^./, (c) => c.toUpperCase());
 
-// a chip's short name: its first word that is not a small one ("A video from the idea" -> "Video"), at most 9 letters
+// a chip's short name: its first word that is not a small one ("A video from the idea" -> "Video"), a whole word, at most 11 letters
 export function shortTitle(t) {
   const w = String(t || '').split(/\s+/).filter(Boolean);
   const small = new Set(['a', 'an', 'the', 'your', 'my']);
   const pick = (w.find((x) => !small.has(x.toLowerCase())) || w[0] || '').replace(/^./, (c) => c.toUpperCase());
-  return pick.length > 9 ? pick.slice(0, 8) + '.' : pick;
+  return pick.length > 11 ? pick.slice(0, 10) + '…' : pick;
 }
 
-// how the chips fit: 'full' names, 'compact' (number + short name, the current one in full), or 'tiny' (numbers, the
-// current one named). widths = { full, compact } the row needs, room = the px it has
+// how the chips fit: 'full' names, 'compact' (number + short name, the current one in full), 'smart' (done stages a tick
+// and a number, the current one in full, the next one by its short name, the rest numbers), or 'tiny' (numbers, the
+// current one named). widths = { full, compact, smart } the row needs, room = the px it has
 export function chipMode(widths, room) {
   if (!room || widths.full <= room) return 'full';
   if (widths.compact <= room) return 'compact';
+  if (widths.smart && widths.smart <= room) return 'smart';
   return 'tiny';
 }
 

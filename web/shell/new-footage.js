@@ -7,6 +7,7 @@
 //   uploadFootage(app, projectId, title, items)
 import { h, icon } from './dom.js';
 import { bytesWords } from './home-actions.js';
+import { began, ended } from './upload-lost.js';
 
 const MEDIA = /\.(mp4|mkv|mov|webm|m4v|avi|mts|m2ts|wav|mp3|m4a|aac|flac|ogg)$/i;
 export const BIG = 200 * 1024 * 1024;
@@ -122,6 +123,7 @@ export function uploadFootage(app, projectId, title, items) {
 // one file: by path (the app window) or streamed up -> true when it is in
 function runOne(app, base, r) {
   const { it, bar, state } = r;
+  const pid = decodeURIComponent(base.split('/')[3] || '');
   state.className = 'nu-state'; state.textContent = 'starting';
   const done = (text) => { bar.firstChild.style.width = '100%'; state.className = 'nu-state ok'; state.textContent = text; r.row.classList.add('ok'); return true; };
   const path = ownPath(it.file);
@@ -132,16 +134,18 @@ function runOne(app, base, r) {
   }
   return new Promise((ok) => {
     const x = new XMLHttpRequest();
+    began(pid, it.file.name, it.file.size);
     x.open('POST', base);
     x.setRequestHeader('x-name', /^[ -~]+$/.test(it.file.name) ? it.file.name : enc(it.file.name));
     x.setRequestHeader('content-type', it.file.type || 'application/octet-stream');
     x.upload.onprogress = (e) => { if (e.lengthComputable) { bar.firstChild.style.width = `${(e.loaded / e.total) * 100}%`; state.textContent = `${Math.floor((e.loaded / e.total) * 100)}%`; } };
     x.onload = () => {
+      ended(pid, it.file.name);
       if (x.status >= 200 && x.status < 300) return ok(done('in'));
       let m = x.statusText; try { m = JSON.parse(x.responseText).error || m; } catch {}
       state.className = 'nu-state err'; state.textContent = m; ok(false);
     };
-    x.onerror = () => { state.className = 'nu-state err'; state.textContent = 'the server could not be reached'; ok(false); };
+    x.onerror = () => { ended(pid, it.file.name); state.className = 'nu-state err'; state.textContent = 'the server could not be reached'; ok(false); };
     x.send(it.file);
   });
 }

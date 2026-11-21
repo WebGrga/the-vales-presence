@@ -52,3 +52,17 @@ export function dropSkill(mine, skill) {
 export function stagesWithSkill(shipped, mine, recipe, stageIds, skill) {
   return stageIds.filter((st) => skillsFor(shipped, mine, recipe, st).skills.includes(skill));
 }
+
+// a recipe copied from a shipped one (`from`) reads what the shipped recipe's stages read: its stages that keep an id
+// of the original get `<copy>/<stage>` lists made from `<original>/<stage>` (a stage the original has no key for is left to the plain stage key)
+export function withCopies(shipped, recipes) {
+  const out = { ...listOf(shipped) };
+  for (const r of recipes || []) {
+    if (!r?.from || !r.id || r.from === r.id) continue;
+    for (const st of r.stages || []) {
+      const from = out[keyOf(r.from, st.id)], own = keyOf(r.id, st.id);
+      if (Array.isArray(from) && !Array.isArray(out[own])) out[own] = from;
+    }
+  }
+  return out;
+}

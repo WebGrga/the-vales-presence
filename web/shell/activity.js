@@ -42,8 +42,10 @@ export function mountActivity(host, app, topBar) {
     after.querySelector('span').textContent = st.stopAfter ? 'Stops after this stage (undo)' : 'Stop after this stage';
     after.classList.toggle('on', st.stopAfter);
     after.title = st.stopAfter ? 'It will stop when this stage ends and wait for you. Click to let it carry on by itself.' : 'Let this stage finish, then wait for you instead of starting the next one by itself';
-    // a background task of a plain chat turn ends by itself: Stop is for a turn or a stage that is working
-    stop.hidden = l.bg ? !!l.bg : !(working || l.kind === 'queue');
+    // a background task of a plain chat turn gets its own Stop: it ends the task and everything it started
+    stop.hidden = !(working || l.kind === 'queue' || l.bg);
+    stop.querySelector('span').textContent = l.bg ? ((st.fires || []).length > 1 ? 'Stop tasks' : 'Stop task') : 'Stop';
+    stop.title = l.bg ? 'End the background task and everything it started' : 'Stop the agent now';
   }
   function tick() {
     const l = stripLine(st, '');
@@ -52,10 +54,11 @@ export function mountActivity(host, app, topBar) {
   }
   setInterval(tick, 1000);
 
+  const bgOnly = () => stripLine(st, '').bg === true;
   async function stopNow() {
     const p = app.project(); if (!p) return;
     stop.disabled = true;
-    try { await app.api(`/api/projects/${encodeURIComponent(p.id)}/stop`, {}); } catch (e) { app.toast('Stop: ' + e.message, 'error'); }
+    try { await app.api(`/api/projects/${encodeURIComponent(p.id)}/${bgOnly() ? 'fire/stop' : 'stop'}`, {}); } catch (e) { app.toast('Stop: ' + e.message, 'error'); }
     stop.disabled = false;
   }
   async function toggleAfter() {

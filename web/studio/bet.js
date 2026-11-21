@@ -16,7 +16,7 @@ export function betSection(ctx) {
   const when = h('p.dim');
   const resBox = h('div.st-bet-result', { hidden: true }, h('h4', 'How did it do?'), result,
     h('div', h('button.small.go', { type: 'button', on: { click: saveResult } }, 'Save the result')));
-  const el = h('section.st-bet',
+  const el = h('section.st-bet.st-box.px-frame',
     h('h3', 'Your bet for this upload'),
     h('p.dim', 'Judges are not real click-through. Say now what you expect, and a week after the upload you check it against your own usual numbers.'),
     h('div.st-bet-row', h('span', 'I expect'), metric, h('span', 'to be'), dir, h('span', 'my usual'), median, note),
@@ -61,7 +61,7 @@ export function betSection(ctx) {
     resBox.hidden = !(st.phase === 'due' || st.phase === 'done');
     el.classList.toggle('due', st.phase === 'due');
     if (st.phase === 'done' && bet?.result) paintDone(bet);
-    if (st.phase === 'due' && !asked.has(ctx.id)) { asked.add(ctx.id); ctx.toast('A week since the upload: check your bet on the Feed page.'); }
+    if (st.phase === 'due' && !asked.has(ctx.id)) { asked.add(ctx.id); ctx.toast('A week since the upload: check your bet on the Upload page.'); }
   }
   return { el, render, flush: () => save.flush() };
 }

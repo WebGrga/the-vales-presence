@@ -22,12 +22,27 @@ export function cleanPhrases(list) {
   return out;
 }
 
-// phrases a viewer might type for a topic: the topic itself and three common shapes around it
+const VERBS = /^(edit|make|build|create|write|record|learn|use|fix|start|grow|get|set|setup|install|train|automate|design|plan|cut|speed|film|shoot|publish|upload|find|run|code|add|improve|stop|beat|win|pick|choose|test|cook|bake)\b/i;
+
+// phrases a viewer might type for a topic, free and instant (a starting point; "Suggest phrases" asks the agent for better):
+// the plain task, a question, the tool for the thing, the outcome. Short, and different in wording.
 export function proposePhrases(topic) {
   const t = String(topic || '').replace(/\s+/g, ' ').trim().replace(/^(brief|plan)\s*:\s*/i, '').slice(0, 100);
   if (!t) return [];
-  const how = /^(how|why|what)\b/i.test(t) || /^[a-z]+ing /i.test(t); // "how to making" reads wrong
-  return cleanPhrases([t, how ? `${t} explained` : `how to ${t}`, `${t} tutorial`, `${t} for beginners`]);
+  const bare = t.replace(/^(how (do i|do you|can i|to)|ways to|learn to)\s+/i, '').replace(/[?.!]+$/, '').trim() || t;
+  const m = bare.match(/^(.+?)\s+(?:with|using|by|via|through)\s+(.+)$/i);
+  const task = (m ? m[1] : bare).trim();
+  const toolFull = m ? m[2].trim() : '';
+  const tool = toolFull.replace(/^(an?|the|my|your|some)\s+/i, '');
+  const verb = VERBS.test(task);
+  const object = verb ? task.replace(/^(set up|\w+)\s+/i, '') : '';
+  const list = [];
+  if (verb && tool) list.push(task, `can ${toolFull} ${task}?`, object ? `${tool} for ${object}` : '', `${task} automatically`, `${tool} ${object || task}`);
+  else if (verb) list.push(task, `best way to ${task}`, `can you ${task}?`, `${task} fast`, `${task} mistakes`);
+  else if (tool) list.push(bare, `${tool} for ${task}`, `is ${tool} good for ${task}?`, `${task} problems`);
+  else if (/^(why|what|how|is|are|can|does|do|should)\b/i.test(bare)) list.push(bare);
+  else list.push(bare); // no rule makes real searches out of a bare topic: "Suggest phrases" asks the agent
+  return cleanPhrases(list.filter(Boolean));
 }
 
 // a channel as the user typed it (@handle, a channel link, a UC id) into the page of its videos; null when it is none of them
@@ -72,13 +87,15 @@ const heading = (text, drop) => {
   return m ? m[1].replace(drop, '').trim() : '';
 };
 
-// the topic of a project: its brief's heading, else its plan's, else its title. asks = there is no brief or plan to read it from.
+// the topic of a project: its brief's heading, else its plan's, else the topic given when it was made (.presence/topic.md), else its title.
+// asks = there is nothing to read it from, so the page asks.
 export async function readTopic(dir) {
   const rd = (f) => fs.readFile(path.join(dir, f), 'utf8').catch(() => '');
-  const [brief, plan, proj] = await Promise.all([rd('brief.md'), rd(path.join('studio', 'plan.md')), rd('project.json')]);
+  const [brief, plan, proj, given] = await Promise.all([rd('brief.md'), rd(path.join('studio', 'plan.md')), rd('project.json'), rd(path.join('.presence', 'topic.md'))]);
   let title = '';
   try { title = String(JSON.parse(proj).title || ''); } catch {}
   const fromBrief = heading(brief, /^brief\s*:\s*/i), fromPlan = heading(plan, /^plan\s*:\s*/i);
-  const topic = fromBrief || fromPlan || title.trim();
-  return { topic, from: fromBrief ? 'brief' : fromPlan ? 'plan' : 'title', asks: !fromBrief && !fromPlan };
+  const fromTopic = given.replace(/\s+/g, ' ').trim().slice(0, 200);
+  const topic = fromBrief || fromPlan || fromTopic || title.trim();
+  return { topic, from: fromBrief ? 'brief' : fromPlan ? 'plan' : fromTopic ? 'topic' : 'title', asks: !fromBrief && !fromPlan && !fromTopic };
 }

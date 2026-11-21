@@ -84,7 +84,7 @@ export default [
         source: s.source, from: s.from, shorts, counts: counts(shorts), hasRough: s.hasRough,
         cut: r ? cutAction(p, r) : { do: 'none' }, review: reviewPlan(shorts), made,
         madeFrom: p.from ? { project: p.from.project, title: p.from.title } : null,
-        fromEdit: shortsRecipe ? { error: 'This is a Shorts project already.' } : linkPlan(outHas(dir)),
+        fromEdit: shortsRecipe ? null : linkPlan(outHas(dir)), // a Shorts project has nothing to pick Shorts from: no panel
       });
     },
   },

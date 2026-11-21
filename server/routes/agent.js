@@ -38,6 +38,15 @@ export default [
     reply(ctx, res, agent.answer(id, c.answers));
   } },
   { method: 'POST', path: P('/stop'), handler: async (req, res, ctx) => { const id = ctx.params[0]; known(ctx, id); reply(ctx, res, await need(ctx, 'runner').stop(id)); } },
+  // end the background tasks of a chat turn (one by id, or all) with everything they started
+  { method: 'POST', path: P('/fire/stop'), handler: async (req, res, ctx) => {
+    const id = ctx.params[0]; known(ctx, id);
+    const b = await ctx.readJson(req), agent = need(ctx, 'agent');
+    const ids = b.id ? [String(b.id)] : (agent.status(id).fires || []).map((f) => f.id);
+    let n = 0;
+    for (const f of ids) if ((await agent.stopFire(id, f)).stopped) n++;
+    ctx.send(res, 200, { stopped: n });
+  } },
   { method: 'GET', path: P('/agent'), handler: async (req, res, ctx) => { const id = ctx.params[0]; known(ctx, id); ctx.send(res, 200, need(ctx, 'agent').status(id)); } },
   { method: 'POST', path: P('/forget'), handler: async (req, res, ctx) => { const id = ctx.params[0]; known(ctx, id); ctx.send(res, 200, need(ctx, 'agent').forget(id)); } },
   { method: 'GET', path: '/api/agent/settings', handler: async (req, res, ctx) => {

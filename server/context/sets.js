@@ -6,7 +6,7 @@
 // are read (the old file is left where it is, untouched).
 import fs from 'node:fs';
 import path from 'node:path';
-import { listOf, skillsFor } from './stage-skills.js';
+import { listOf, skillsFor, withCopies } from './stage-skills.js';
 
 export const DEFAULT_ID = 'default';
 export const SET_ID = /^[a-z0-9][a-z0-9-]{0,47}$/;
@@ -61,7 +61,8 @@ export function createSets({ ship, dataDir }) {
   const mine = path.join(dataDir, 'craft');
   const dir = path.join(mine, 'skill-sets'), prefsFile = path.join(mine, 'skill-sets.json'), legacy = path.join(mine, 'stage-skills.json');
   const fileOf = (id) => path.join(dir, id + '.json');
-  const shippedLists = () => listOf(readJson(path.join(ship, 'stage-skills.json'), {}));
+  const recipeFiles = () => [ship, mine].flatMap((d) => { try { return fs.readdirSync(path.join(d, 'recipes')).filter((f) => f.endsWith('.json')).map((f) => readJson(path.join(d, 'recipes', f), null)); } catch { return []; } }).filter(Boolean);
+  const shippedLists = () => withCopies(readJson(path.join(ship, 'stage-skills.json'), {}), recipeFiles());
 
   // first read: the old single override becomes the set "My set" (and the user's default, so nothing changes for them)
   function ensure() {

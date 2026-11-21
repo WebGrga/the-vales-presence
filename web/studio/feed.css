@@ -1,6 +1,7 @@
 /* The feed preview: a plain, neutral video-site home feed (light or dark, desktop or phone). No pixel chrome here:
    it should look like what a viewer sees, so the comparison is fair. */
 .st-feedstage { display: flex; justify-content: center; padding: 6px 0; overflow-x: auto; }
+.st-feedstage:has(.st-empty) { justify-content: flex-start; } /* an empty feed says its words at the left, like the other pages */
 .yt { --bg: #ffffff; --fg: #0f0f0f; --sub: #606060; --chip: #f2f2f2; --chipon: #0f0f0f; --chipfg: #ffffff; --line: #e5e5e5;
   font-family: Roboto, Arial, system-ui, sans-serif; background: var(--bg); color: var(--fg); border-radius: 12px; overflow: hidden;
   width: 100%; max-width: 1360px; transition: background 0.3s ease, color 0.3s ease; box-shadow: 0 0 0 4px var(--outline, #1b1b2a); }

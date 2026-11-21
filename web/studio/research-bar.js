@@ -5,9 +5,10 @@ import { h, icon } from '../shell/dom.js';
 import { keepDraft, takeDraft } from './persist.js';
 
 const WHEN = [['any', 'Any time'], ['week', 'Past week'], ['month', 'Past month'], ['year', 'Past year']];
-const FROM = { brief: 'from the brief', plan: 'from the plan', title: 'from the project title, there is no brief yet' };
+const FROM = { brief: 'from the brief', plan: 'from the plan', topic: 'from the topic you gave when you made the project', title: 'from the project title, there is no brief yet' };
 const SPAN = { search: [0, 40], channels: [40, 80], pictures: [80, 100] }; // how much of the bar each part of a search fills
 const NAME = 'research.query';
+const SUGGEST = 'Suggest phrases (agent, under 1¢)';
 
 export const duration = (ms) => {
   const s = Math.max(0, Math.round((ms || 0) / 1000));
@@ -21,7 +22,7 @@ export function queryBar(ctx) {
   const topicNote = h('span.dim.st-topic-from');
   const chips = h('div.st-chips');
   const add = h('input.st-chip-add', { type: 'text', 'aria-label': 'Add a search phrase', placeholder: 'Add a phrase, then Enter' });
-  const suggest = h('button.small.calm', { type: 'button', title: 'Replace the phrases with new ones made from the topic' }, 'Suggest phrases');
+  const suggest = h('button.small.calm', { type: 'button', title: 'Asks the agent once for six phrases a viewer would type. Replaces the phrases below. Uses the subscription: under a cent.' }, SUGGEST);
   const channels = h('input', { type: 'text', 'aria-label': 'Competitor channels', placeholder: '@handle or channel link, separated by commas' });
   const when = h('select', { 'aria-label': 'Posted' }, ...WHEN.map(([k, v]) => h('option', { value: k }, v)));
   const language = h('input', { type: 'text', 'aria-label': 'Language', placeholder: 'en, de, fr…', maxlength: 8, size: 8 });
@@ -93,7 +94,15 @@ export function queryBar(ctx) {
     if (!r || (!force && q.touched)) return;
     q.phrases = r.phrases; if (force) q.touched = false; drawChips(); save();
   }
-  suggest.addEventListener('click', () => propose(true));
+  suggest.addEventListener('click', async () => {
+    if (!q.topic.trim()) { topic.focus(); return; }
+    suggest.disabled = true; suggest.textContent = 'Asking the agent…';
+    const r = await ctx.api(`/api/studio/${ctx.id}/research/suggest`, { topic: q.topic }).catch(() => null);
+    suggest.disabled = false; suggest.textContent = SUGGEST;
+    if (!r) { warn.hidden = false; warn.textContent = 'Could not ask the agent. The free phrases stay.'; return; }
+    warn.hidden = !r.error; warn.textContent = r.error ? `The agent could not be reached (${r.error}). These are the free phrases.` : '';
+    q.phrases = r.phrases; q.touched = false; drawChips(); save();
+  });
 
   async function run() {
     add1();

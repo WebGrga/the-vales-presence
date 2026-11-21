@@ -5,6 +5,7 @@ import { fileUrl, duration } from './format.js';
 import { keepDraft, takeDraft, settleDraft, saver } from './persist.js';
 import { uploadHistory } from './upload-history.js';
 import { chaptersButton } from './upload-chapters.js';
+import { betSection } from './bet.js';
 
 const CATEGORIES = [['22', 'People & Blogs'], ['28', 'Science & Technology'], ['27', 'Education'], ['24', 'Entertainment'], ['20', 'Gaming'], ['26', 'Howto & Style'], ['10', 'Music'], ['25', 'News & Politics'], ['17', 'Sports'], ['19', 'Travel & Events'], ['2', 'Autos & Vehicles'], ['15', 'Pets & Animals'], ['23', 'Comedy'], ['1', 'Film & Animation'], ['29', 'Nonprofits & Activism']];
 const PRIV = [['private', 'Private'], ['unlisted', 'Unlisted'], ['public', 'Public']];
@@ -31,6 +32,7 @@ export function uploadSection(ctx) {
   const when = h('input', { type: 'datetime-local', 'aria-label': 'Publish at (private videos only)' });
   when.addEventListener('change', () => change({ publishAt: when.value ? new Date(when.value).toISOString() : '' }));
   const hist = uploadHistory(ctx);
+  const bet = betSection(ctx);
   const checks = h('ul.st-checks');
   const yt = h('div.st-yt');
   const bar = h('div.st-progress', h('i'));
@@ -48,7 +50,7 @@ export function uploadSection(ctx) {
         h('label.st-field', h('span', 'Category'), cat),
         h('label.st-field', h('span', 'Audience'), kids),
         h('label.st-field.st-row', synth, h('span', 'Altered or synthetic content that looks real (YouTube asks you to say so)'))),
-      h('div.st-upright', h('div.px-frame.st-box', h('h3', 'YouTube'), yt), h('div.px-frame.st-box', h('h3', 'Before it goes'), checks),
+      h('div.st-upright', h('div.px-frame.st-box', h('h3', 'YouTube'), yt), h('div.px-frame.st-box', h('h3', 'Before it goes'), checks), bet.el,
         h('div.px-frame.st-box', h('div.st-upbtns', dryBtn, upBtn), bar, status), hist.el)));
 
   function paintPriv() { for (const b of priv.children) b.classList.toggle('on', b.dataset.v === fields.privacy); when.disabled = fields.privacy !== 'private'; }
@@ -136,10 +138,11 @@ export function uploadSection(ctx) {
     paintYt(dt.youtube);
     paintState(dt.upload.state);
     paintChecks();
+    bet.render(dt);
     hist.render();
   }
 
   function onUpload(state) { if (!data) return; data.upload.state = state; data.uploading = state.status === 'uploading'; paintState(state); paintChecks(); if (state.status === 'done') hist.render(); }
 
-  return { el, render, onUpload, flush: () => save.flush() };
+  return { el, render, onUpload, flush: () => Promise.all([save.flush(), bet.flush()]) };
 }

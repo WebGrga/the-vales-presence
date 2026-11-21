@@ -89,6 +89,7 @@ export function researchSection(ctx) {
     let vids = all.filter(fits);
     if (sort === 'views') vids = [...vids].sort((a, b) => (b.views ?? -1) - (a.views ?? -1));
     if (sort === 'newest') vids = [...vids].sort((a, b) => String(b.published || '').localeCompare(String(a.published || '')));
+    find.hidden = sortSel.hidden = !all.length; // nothing to filter or sort before a search has found videos
     sub.textContent = all.length ? `${r.query ? `“${r.query}” · ` : ''}${all.length} videos${r.fetched ? ` · ${ago(r.fetched)}` : ''}` : '';
     notes.hidden = !r.notes; notes.textContent = r.notes || '';
     if (all.length && !r.notes) { notes.hidden = false; notes.replaceChildren(h('span.dim', 'No agent notes yet. '), ask); }

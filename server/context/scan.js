@@ -139,7 +139,7 @@ export function scan(o) {
   return {
     sets, skillSet, setList: sets.all().map((x) => ({ id: x.id, name: x.name, builtin: x.builtin, projects: used[x.id] || 0, isDefault: x.id === sets.defaultId() })),
     P, recipe, recipes: Object.values(all).map((r) => ({ id: r.id, name: r.name })), project: proj ? { id: proj.id, title: proj.title, recipe: proj.recipe, at: proj.at, stages: proj.stages } : null,
-    shippedSkills: readJson(path.join(P.craft, 'stage-skills.json'), {}),
+    shippedSkills: sets.shippedLists(),
     mineSkills: cur.lists,
     items,
   };

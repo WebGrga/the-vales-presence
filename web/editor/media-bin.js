@@ -4,6 +4,7 @@
 // each row has Rename, Replace, Find again (a linked file that moved shows as missing) and Remove (media-bin-actions.js).
 import { h, icon, button } from '../shell/dom.js';
 import { binActions } from './media-bin-actions.js';
+import { began, ended, lostFor, clear } from '../shell/upload-lost.js';
 
 const VIDEO = /\.(mp4|mkv|mov|webm|m4v|avi|mts|m2ts)$/i, AUDIO = /\.(wav|mp3|m4a|aac|flac|ogg)$/i;
 const size = (n) => (n > 1e9 ? (n / 1e9).toFixed(1) + ' GB' : n > 1e6 ? Math.round(n / 1e6) + ' MB' : Math.max(1, Math.round(n / 1e3)) + ' KB');
@@ -14,7 +15,8 @@ export function createMediaBin(app, store, ui) {
   const input = h('input', { type: 'file', multiple: true, accept: 'video/*,audio/*', hidden: true });
   const add = button('upload', 'Add footage', 'Add recordings to this project (or drop them here)', () => input.click(), 'small');
   const byPath = button('folder', 'By path', 'Add a recording by its path: link it where it is (saves space), or copy it in', () => acts.addPath(), 'small');
-  const el = h('div.bin', list, h('div.bin-foot', add, byPath, input, h('span.dim', 'or drop files')));
+  const lost = h('div.bin-lost', { hidden: true, role: 'status' });
+  const el = h('div.bin', lost, list, h('div.bin-foot', add, byPath, input, h('span.dim', 'or drop files')));
   let files = [];
   const acts = binActions({ app, pid, refresh: () => refresh() });
 
@@ -23,6 +25,7 @@ export function createMediaBin(app, store, ui) {
   async function refresh() {
     try { files = (await app.api(`/api/projects/${enc(pid)}/footage`))?.files || []; } catch { files = []; }
     render();
+    paintLost();
   }
   function render() {
     const used = new Map(Object.values(S.sources || {}).map((s) => [String(s.file || '').replace(/^video\//, ''), s.key]));
@@ -45,6 +48,16 @@ export function createMediaBin(app, store, ui) {
     list.replaceChildren(...rows);
   }
 
+  // a file that was going up when the page was reloaded or closed did not finish: say which, offer to add it again
+  function paintLost() {
+    for (const e of lostFor(pid)) if (files.some((f) => f.name === e.name)) clear(pid, e.name); // it arrived some other way
+    const gone = lostFor(pid);
+    lost.hidden = !gone.length;
+    lost.replaceChildren(...gone.map((e) => h('div.bin-lost-row',
+      h('span.bin-lost-t', { title: `${e.name} was going up when the page was reloaded or closed. Nothing of it was kept: add it again.` }, `${e.name} did not finish going up`),
+      h('button.small.calm', { type: 'button', on: { click: () => { clear(pid, e.name); paintLost(); input.click(); } } }, 'Add it again'),
+      h('button.small.calm', { type: 'button', title: 'Forget this note', on: { click: () => { clear(pid, e.name); paintLost(); } } }, 'Dismiss'))));
+  }
   function upload(list) {
     const ok = list.filter((f) => VIDEO.test(f.name) || AUDIO.test(f.name));
     if (ok.length < list.length) app.toast('Only video and sound files go into the footage.', 'warn');
@@ -58,16 +71,18 @@ export function createMediaBin(app, store, ui) {
     const row = h('div.bin-item.static.uploading', icon('upload', true), h('span.bin-name', f.name), bar);
     list.prepend(row);
     const x = new XMLHttpRequest();
+    began(pid, f.name, f.size);
     x.open('POST', `/api/projects/${enc(pid)}/footage`);
     x.setRequestHeader('x-name', /^[ -~]+$/.test(f.name) ? f.name : encodeURIComponent(f.name)); // a header is ASCII: other names go URI-encoded
     x.setRequestHeader('content-type', f.type || 'application/octet-stream');
     x.upload.onprogress = (e) => { if (e.lengthComputable) bar.firstChild.style.width = `${(e.loaded / e.total) * 100}%`; };
     x.onload = () => {
+      ended(pid, f.name);
       row.remove();
       if (x.status >= 200 && x.status < 300) { app.toast(`${f.name} is in the footage.`, 'ok'); refresh(); }
       else { let m = x.statusText; try { m = JSON.parse(x.responseText).error || m; } catch {} app.toast(`${f.name} did not go up: ${m}`, 'error'); }
     };
-    x.onerror = () => { row.remove(); app.toast(`${f.name} did not go up: the server could not be reached.`, 'error'); };
+    x.onerror = () => { ended(pid, f.name); row.remove(); app.toast(`${f.name} did not go up: the server could not be reached.`, 'error'); };
     x.send(f);
   }
 

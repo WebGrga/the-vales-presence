@@ -8,7 +8,7 @@ const KEY = 'presence.export.folder', PRESET = 'presence.export.preset';
 
 export function folderPanel({ app, id, refresh }) {
   let state = { presets: [], history: [], shorts: [], has: {} }, job = null, preset = localStorage.getItem(PRESET) || 'youtube', busy = false;
-  const folder = h('input', { type: 'text', spellcheck: false, placeholder: 'C:\Exports (the whole path of a folder)', 'aria-label': 'Folder to export to' });
+  const folder = h('input', { type: 'text', spellcheck: false, placeholder: 'C:\\Exports (the whole path of a folder)', 'aria-label': 'Folder to export to' });
   folder.addEventListener('input', () => localStorage.setItem(KEY, folder.value));
   const presets = h('div.export-presets');
   const bar = h('div.export-bar', h('i'));
@@ -39,7 +39,9 @@ export function folderPanel({ app, id, refresh }) {
   async function show(file) { try { await app.api(`/api/export/${id}/reveal`, { file }); } catch (e) { app.toast(e.message, 'error'); } }
 
   function draw() {
-    presets.replaceChildren(...(state.presets || []).map((p) => h('button.export-preset' + (p.id === preset ? '.on' : ''), { type: 'button', 'aria-pressed': p.id === preset, disabled: running(), on: { click: () => { preset = p.id; draw(); } } },
+    // while one renders, the preset that renders is the selected one (whatever was chosen before), the others wait dimmed
+    const chosen = running() && job.preset ? job.preset : preset;
+    presets.replaceChildren(...(state.presets || []).map((p) => h('button.export-preset' + (p.id === chosen ? '.on' : '') + (running() && p.id === chosen ? '.rendering' : ''), { type: 'button', 'aria-pressed': p.id === chosen, disabled: running(), on: { click: () => { preset = p.id; draw(); } } },
       h('span.pixel', p.name), h('span.dim', p.about))));
     const n = kept().length;
     acts.replaceChildren(...[

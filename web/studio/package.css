@@ -50,7 +50,8 @@
 .yt-words { flex: 1; min-width: 160px; font: 13px Roboto, Arial, system-ui, sans-serif; padding: 5px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); }
 .yt-mk-note { width: 100%; color: var(--sub); font-size: 12px; }
 .yt.phone .yt-marks { padding: 0 12px; }
-.yt-score { position: absolute; left: 8px; top: 8px; background: rgba(0, 0, 0, 0.82); color: #fff; font: 700 13px/1 Roboto, Arial, sans-serif; padding: 4px 6px; border-radius: 6px; }
+/* the judges' score sits in the text under the picture, so the thumbnail is seen whole, as on YouTube */
+.yt-score { display: inline-block; margin-left: 6px; background: rgba(0, 0, 0, 0.82); color: #fff; font: 700 12px/1 Roboto, Arial, sans-serif; padding: 2px 5px; border-radius: 4px; vertical-align: 1px; }
 .yt-score.pass { background: #1e7a3a; }
 
 .st-judge { display: inline-flex; align-items: center; gap: 8px; }
@@ -69,9 +70,10 @@
 .st-pair-score.pass { color: var(--lgreen, #86c05a); }
 .st-pair-promise { font-size: 12px; }
 
-.st-bet { margin: 22px 0 0; padding: 10px 14px; background: var(--dusk, #33304a); border-left: 4px solid var(--tan, #d9a877); transition: border-color 0.3s ease; }
-.st-bet.due { border-left-color: var(--yellow, #e8c547); }
-.st-bet h3, .st-bet h4 { margin: 0 0 6px; }
+/* the bet is a box like the others on the Upload page; a week after the upload it gets a yellow edge */
+.st-bet { transition: box-shadow 0.3s ease; }
+.st-bet.due { box-shadow: inset 4px 0 0 var(--yellow, #e8c547), inset var(--px) var(--px) 0 rgba(255, 255, 255, 0.07), inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 rgba(0, 0, 0, 0.3); }
+.st-bet h4 { margin: 0 0 6px; color: var(--yellow, #e8c547); }
 .st-bet-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 6px 0; }
 .st-bet-result { margin-top: 8px; }
 .st-clarity { margin: 4px 0; font-size: 13px; color: var(--lgreen, #86c05a); }

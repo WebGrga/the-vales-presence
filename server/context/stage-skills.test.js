@@ -36,3 +36,12 @@ test('every skill the shipped stage-skills.json names is a shipped skill', () =>
     for (const name of list) assert.ok(fs.existsSync(new URL(`../../craft/skills/${name}/SKILL.md`, import.meta.url)), `${stage}: ${name}`);
   }
 });
+
+test('a copied recipe reads the skills of the stages it kept', async () => {
+  const { withCopies } = await import('./stage-skills.js');
+  const ship = { 'video/research': ['r'], 'video/plan': ['p'], studio: ['s'] };
+  const lists = withCopies(ship, [{ id: 'mine', from: 'video', stages: [{ id: 'research' }, { id: 'extra' }] }]);
+  assert.deepEqual(skillsFor(lists, {}, 'mine', 'research').skills, ['r']);
+  assert.deepEqual(skillsFor(lists, {}, 'mine', 'extra').skills, []);
+  assert.deepEqual(skillsFor(lists, {}, 'mine', 'plan').skills, []);
+});

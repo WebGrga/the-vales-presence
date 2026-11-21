@@ -97,10 +97,12 @@ test('totals take Studio and talking to the agent in', () => {
 });
 
 test('short names and how the chips fit', () => {
-  assert.equal(shortTitle('Rough review'), 'Rough'); assert.equal(shortTitle('A video'), 'Video'); assert.equal(shortTitle('Thumbnails'), 'Thumbnai.');
+  assert.equal(shortTitle('Rough review'), 'Rough'); assert.equal(shortTitle('A video'), 'Video'); assert.equal(shortTitle('Thumbnails'), 'Thumbnails');
   assert.equal(chipMode({ full: 800, compact: 500 }, 900), 'full');
   assert.equal(chipMode({ full: 1400, compact: 800 }, 900), 'compact');
   assert.equal(chipMode({ full: 1400, compact: 1000 }, 900), 'tiny');
+  assert.equal(chipMode({ full: 1400, compact: 1000, smart: 800 }, 900), 'smart');
+  assert.equal(chipMode({ full: 1400, compact: 1000, smart: 950 }, 900), 'tiny');
   const cs = chips({ at: 'a', stages: {} }, { stages: [{ id: 'a', title: 'Final review' }, { id: 'b', short: 'Feed' }] });
   assert.deepEqual(cs.map((c) => [c.n, c.short]), [[1, 'Final'], [2, 'Feed']]);
 });
@@ -128,4 +130,9 @@ test('the notes a send-back carried, while the stage it went to works', () => {
   const p = { stages: { rough: { status: 'running', note: 'Sent back: Restore c5.', sentBack: 9 } } };
   assert.deepEqual(sentBack(p, recipe), { stage: 'rough', title: 'Rough', notes: 'Restore c5.', at: 9 });
   assert.equal(sentBack({ stages: { rough: { status: 'done', note: 'Sent back: x' } } }, recipe), null);
+});
+
+test('stages that share a short name keep their whole titles, so two chips never read the same', () => {
+  const cs = chips({ at: 'a', stages: {} }, { stages: [{ id: 'plan', title: 'Plan' }, { id: 'plan-review', title: 'Plan review' }, { id: 'rough', title: 'Rough cut' }] });
+  assert.deepEqual(cs.map((c) => c.short), ['Plan', 'Plan review', 'Rough']);
 });

@@ -4,6 +4,7 @@
 // Everything it does goes out live as { type: 'agent', project, event, ... }; background renders as { type: 'fire' }.
 // Cost per turn = the difference of the SDK's running total_cost_usd. The session id is kept in .presence/session.json,
 // so a restart resumes the conversation.
+import { snapshot, killTaskTree } from './task-kill.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { query } from '@anthropic-ai/claude-agent-sdk';
@@ -56,7 +57,7 @@ export function createAgent(ctx) {
     const cfg = settings();
     const saved = fresh ? null : readSaved(id);
     const input = inbox();
-    const S = { id, dir, input, busy: false, turn: null, base: 0, F: Fires.newFires(), W: Fires.newWait(), stage: null, pending: null, question: null,
+    const S = { id, dir, input, bg: {}, bgOut: {}, busy: false, turn: null, base: 0, F: Fires.newFires(), W: Fires.newWait(), stage: null, pending: null, question: null,
       activity: Date.now(), quiet: Fires.newQuiet(), stalled: null, progress: null,
       used: Date.now(), model: cfg.model, effort: cfg.effort, mode: cfg.permissionMode, resumed: saved?.id || null, inited: false, last: null, closing: false };
     const env = { ...process.env, PRESENCE_ENGINE: path.join(ctx.root, 'engine'), PRESENCE_PROJECT: id, PRESENCE_VIDEO: path.join(dir, 'video'), PRESENCE_LOCKS: path.join(dir, '.presence', 'locks.json'), PRESENCE_ROOT: ctx.root };
@@ -159,6 +160,7 @@ export function createAgent(ctx) {
         if (c.type !== 'tool_use') continue;
         if (S.turn) S.turn.tools++;
         emit(S, 'tool', { id: c.id, tool: c.name, input: trimInput(c.input), by });
+        if (c.name === 'Bash' && c.input?.run_in_background && c.input.command) S.bg[c.id] = String(c.input.command); // kept to find the task's shell when it must end
       }
       return;
     }
@@ -167,6 +169,7 @@ export function createAgent(ctx) {
         if (b.type !== 'tool_result') continue;
         const text = resultText(b);
         const got = Fires.onResult(S.F, b.tool_use_id, text);
+        if (got && S.bg[b.tool_use_id]) S.bgOut[got.out] = S.bg[b.tool_use_id];
         if (got) ctx.broadcast({ type: 'fire', project: S.id, id: got.id, state: 'burning', cmd: got.cmd, out: got.out });
         emit(S, 'tool_result', { id: b.tool_use_id, text, isError: !!b.is_error, by: msg.parent_tool_use_id ? 'subagent' : undefined });
       }
@@ -347,13 +350,33 @@ export function createAgent(ctx) {
     S.question.resolve(answers && typeof answers === 'object' ? answers : {});
     return { answered: true };
   }
+  // End background tasks for good. The SDK's stopTask ends the shell but, on Windows, not what the shell started (a sleep,
+  // a render): so the shells are found by their command first and their whole process tree is killed (task-kill.js).
+  async function endFires(S, ids) {
+    if (!ids.length) return;
+    let rows = null;
+    try { rows = await snapshot(); } catch {}
+    for (const fid of ids) {
+      const f = S.F.fires[fid];
+      const command = (f && (S.bg[f.tool] || S.bgOut[f.out])) || '';
+      if (command && rows) { try { await killTaskTree(command, { rows, since: f.start }); } catch (e) { log('kill tree', e.message); } }
+      await S.q.stopTask(fid).catch(() => {});
+    }
+  }
+  // Stop one background task (the activity strip's Stop for a task that runs on its own)
+  async function stopFire(id, fid) {
+    const S = open[id];
+    if (!S || !S.F.fires[fid]) return { stopped: false };
+    await endFires(S, [fid]);
+    return { stopped: true };
+  }
   // Stop: the turn is interrupted, its background tasks put out, a sleeping stage handed back as stopped
   async function stop(id) {
     const S = open[id];
     if (!S) return { stopped: false };
     S.stopping = true;
     if (S.question) S.question.resolve(null);
-    for (const fid of Object.keys(S.F.fires)) await S.q.stopTask(fid).catch(() => {});
+    await endFires(S, Object.keys(S.F.fires));
     if (S.busy) await S.q.interrupt().catch((e) => log('interrupt', e.message));
     if (!S.busy && S.pending) { const a = Fires.closed(S.W); finishStage(S, { text: a?.text || '', cost: a?.cost || 0, ms: a?.ms || 0, stopped: true }); S.stopping = false; }
     // an interrupt that never yields a result: hand the stage back anyway
@@ -383,8 +406,8 @@ export function createAgent(ctx) {
       stalled: S.stalled || null,
     };
   }
-  async function closeAll() { clearInterval(ticker); for (const S of Object.values(open)) { try { for (const fid of Object.keys(S.F.fires)) await S.q.stopTask(fid).catch(() => {}); } catch {} shut(S); } }
+  async function closeAll() { clearInterval(ticker); for (const S of Object.values(open)) { try { await endFires(S, Object.keys(S.F.fires)); } catch {} shut(S); } }
   const isBusy = (id) => !!(open[id]?.busy || open[id]?.pending);
 
-  return { turn, say, answer, stop, status, live, forget, closeAll, isBusy, settings, setSettings, emit: emitId, models: () => MODELS, efforts: () => EFFORTS, modes: () => MODES };
+  return { turn, say, answer, stop, stopFire, status, live, forget, closeAll, isBusy, settings, setSettings, emit: emitId, models: () => MODELS, efforts: () => EFFORTS, modes: () => MODES };
 }

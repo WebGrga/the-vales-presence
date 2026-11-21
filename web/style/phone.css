@@ -31,7 +31,7 @@
   .stage-btns { order: 2; margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
   .stage-btns button { min-height: 34px; }
   .stage-pop { position: fixed; left: 8px; right: 8px; top: auto; bottom: 62px; width: auto; max-height: 70dvh; overflow: auto; }
-  #toasts { top: 52px; left: 8px; right: 8px; transform: none; width: auto; align-items: stretch; }
+  #toasts { top: 52px; bottom: auto; left: 8px; right: 8px; transform: none; width: auto; align-items: stretch; }
 
   /* the Edit tab: the viewer on top, one panel under it */
   .tab-pane[data-tab=edit] .ed { display: flex; flex-direction: column; }
