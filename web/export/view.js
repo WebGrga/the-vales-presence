@@ -45,3 +45,20 @@ export function shownFiles(format, files) {
   const one = latest(files, format.kind);
   return one ? [one] : [];
 }
+
+// the line under the progress bar for a render job ({ state, pct, name, batch, error }) or null
+export function jobText(job) {
+  if (!job) return '';
+  const of = job.batch ? ` (Short ${job.batch.n} of ${job.batch.of})` : '';
+  if (job.state === 'running') return `Rendering ${job.name}${of}: ${job.pct || 0}%`;
+  if (job.state === 'done') return `Done${of}: ${job.name} in ${job.folder}`;
+  if (job.state === 'cancelled') return 'Cancelled.';
+  if (job.state === 'error') return `Stopped: ${job.error || 'unknown error'}`;
+  return '';
+}
+
+// a history entry -> { title } : the preset, and which Short it was
+export function historyLine(entry, shorts = []) {
+  const s = entry.short ? (shorts.find((x) => x.id === entry.short)?.title || entry.short) : '';
+  return { title: `${entry.presetName || entry.preset}${s ? `: ${s}` : ''}` };
+}

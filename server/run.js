@@ -9,6 +9,7 @@ import * as St from './stages.js';
 import { lockFiles, checkLocks, readLocks, writeLocks, needsCheck, lockSentence, gateOf, lockMessage, safeRel } from './locks.js';
 import { stagePrompt, answerPrompt, studioNote, STUDIO_STAGES } from './prompt.js';
 import { createCraft } from './craft.js';
+import { listFootage } from './footage.js';
 import { reviewSummary, readCuts, pendingChoices, workingFile, sendbackArchive, archivedName } from './cuts.js';
 import { keepExisting } from './stage-keep.js';
 import { createLive, outState, withBack } from './run-live.js';
@@ -49,7 +50,7 @@ export function createRunner(ctx) {
       try { const st = fs.statSync(f); return rel.endsWith('/') ? st.isDirectory() && fs.readdirSync(f).length > 0 : st.isFile() || st.isDirectory(); } catch { return false; }
     };
   }
-  function footage(dir) { try { return fs.readdirSync(path.join(dir, 'video', 'footage')).filter((f) => !f.startsWith('.') && !f.endsWith('.part')); } catch { return []; } }
+  function footage(dir) { return listFootage(dir).filter((f) => !f.missing).map((f) => f.name); } // linked footage too
 
   // the words for one stage
   function promptFor(p, r, st, dir) {

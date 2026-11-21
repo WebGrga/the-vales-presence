@@ -1,4 +1,4 @@
-// Media of a project: safe paths inside it, and the screen's live-preview helpers: 540p proxies of every source
+// Media of a project: safe paths inside it (linked footage resolves to the real file, footage.js), and the screen's live-preview helpers: 540p proxies of every source
 // (video/out/work/proxy/<src>.mp4) and waveform peaks (video/out/work/peaks/<src>.json: { rate: 100, peaks: [0..1] }).
 // <src> is the edit list's source key (r1, ...); footage not in the edit list goes by its file name without extension.
 // The rough gets peaks too (peaks/rough.json). Made once, remade when the source is newer; one job per project at a time.
@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { safeJoin } from './http.js';
+import { resolveFootage, listFootage } from './footage.js';
 
 export const PEAK_RATE = 100;      // peaks per second
 const SAMPLE_RATE = 8000;          // the sound is read at this rate for peaks
@@ -99,7 +100,12 @@ export function createMedia(ctx) {
   const state = {};   // project id -> { state, done, total, error }
 
   // a file of a project by its relative path (never outside it)
-  function fileOf(id, rel) { return safeJoin(ctx.projectDir(id), rel); }
+  // a footage name that is a link plays from where the real file is
+  function fileOf(id, rel) {
+    const f = safeJoin(ctx.projectDir(id), rel);
+    const m = f && /^video[\\/]footage[\\/]([^\\/]+)$/.exec(path.relative(ctx.projectDir(id), f));
+    return m ? resolveFootage(ctx.projectDir(id), 'footage/' + m[1]) : f;
+  }
 
   async function probeEncoder() {
     if (encoder) return encoder;
@@ -145,12 +151,12 @@ export function createMedia(ctx) {
   function list(id) {
     const dir = ctx.projectDir(id), video = path.join(dir, 'video');
     let edl = null; try { edl = JSON.parse(fs.readFileSync(path.join(video, 'out', 'edl.json'), 'utf8')); } catch {}
-    let files = []; try { files = fs.readdirSync(path.join(video, 'footage')).filter((f) => !f.startsWith('.') && !f.endsWith('.part')); } catch {}
+    const files = listFootage(dir).map((f) => f.name); // links too: they may not be in the folder itself
     const plan = proxyPlan(edl, files);
     const rel = (...p) => ['video', ...p].join('/');
     const sources = {};
     for (const s of plan) {
-      const src = stat(path.join(video, ...s.file.split('/')));
+      const src = stat(resolveFootage(dir, s.file));
       const proxy = path.join(video, 'out', 'work', 'proxy', `${s.src}.mp4`), peaks = path.join(video, 'out', 'work', 'peaks', `${s.src}.json`);
       sources[s.src] = { file: s.file, track: s.track, audioOnly: s.audioOnly, present: !!src,
         proxyPath: s.audioOnly ? null : rel('out', 'work', 'proxy', `${s.src}.mp4`), peaksPath: rel('out', 'work', 'peaks', `${s.src}.json`),
@@ -179,7 +185,7 @@ export function createMedia(ctx) {
       const todo = [];
       for (const [key, s] of Object.entries(now.sources)) {
         if (!s.present) continue;
-        const input = path.join(video, ...s.file.split('/'));
+        const input = resolveFootage(dir, s.file);
         if (!s.proxyReady) todo.push({ what: `proxy ${key}`, path: s.proxyPath, run: () => makeProxy(input, path.join(video, 'out', 'work', 'proxy', `${key}.mp4`), s.track, s.audioOnly) });
         if (!s.peaksReady) todo.push({ what: `peaks ${key}`, path: s.peaksPath, run: () => makePeaks(input, path.join(video, 'out', 'work', 'peaks', `${key}.json`), s.track) });
       }

@@ -3,6 +3,7 @@
 import { h, icon } from '../shell/dom.js';
 import { ensureCss } from '../setup/first.js';
 import { sizeText, ago, ready, offText, textLines, shownFiles } from './view.js';
+import { folderPanel } from './folder.js';
 
 let FORMATS = null;
 async function formats() {
@@ -27,13 +28,25 @@ export async function mount(el, app) {
 
   const list = h('div.export-list');
   const shortsBox = h('div.export-shorts');
+  const folder = folderPanel({ app, id: p.id, refresh: () => refresh() });
+  const fromBox = h('div.export-from'); // Shorts from this edit (an edit project), or where these Shorts came from
   root.append(
     h('div.export-head', h('h2', 'Export'), h('p.muted', 'Everything here is made on this machine from the approved edit. Nothing is uploaded.')),
-    list, shortsBox);
+    folder.el, fromBox, list, shortsBox);
+
+  async function drawFrom() {
+    let s = null;
+    try { s = await app.api(`/api/shorts/${id}`); } catch {}
+    const parts = [];
+    if (s?.fromEdit && !s.fromEdit.error && !s.madeFrom) parts.push(h('p', 'Want Shorts from this video? ', h('a', { href: `#/${id}/shorts` }, 'Make Shorts from this edit'), ': a new Shorts project is made from this rough and its words, nothing uploaded again.'));
+    if (s?.made?.length) parts.push(h('p.dim', 'Shorts projects made from this one: ', ...s.made.flatMap((m, i) => [i ? ', ' : '', h('a', { href: `#/${encodeURIComponent(m.id)}/shorts` }, m.title)])));
+    if (s?.madeFrom) parts.push(h('p.dim', 'Made from the edit of ', h('a', { href: `#/${encodeURIComponent(s.madeFrom.project)}/export` }, s.madeFrom.title), '.'));
+    fromBox.replaceChildren(...parts); fromBox.hidden = !parts.length;
+  }
 
   async function refresh() {
     try { state = await app.api(`/api/export/${id}`); } catch (e) { state = { files: [], has: {}, why: {}, shorts: [], error: e.message }; }
-    draw();
+    draw(); folder.update(state);
   }
 
   function draw() {
@@ -113,5 +126,6 @@ export async function mount(el, app) {
   ];
   draw();
   await refresh();
-  return { unmount() { for (const off of offs) try { off?.(); } catch {} } };
+  drawFrom();
+  return { unmount() { folder.dispose(); for (const off of offs) try { off?.(); } catch {} } };
 }

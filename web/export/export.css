@@ -34,3 +34,22 @@
 .export-text { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--dgrey); }
 .export-text pre { margin: 0 0 8px; padding: 8px 10px; max-height: 220px; overflow: auto; background: var(--dusk); color: var(--cream); font: 14px/1.5 var(--mono, monospace); white-space: pre-wrap; user-select: text; }
 .export-files .export-file { margin-top: 6px; padding-top: 6px; }
+
+/* export to a folder: presets, progress, history */
+.export-folder { background: var(--night); padding: 14px 16px; margin-bottom: 16px; display: flex; flex-direction: column; gap: 10px; }
+.export-folder .export-sub { margin: 0; }
+.export-field { display: flex; flex-direction: column; gap: 3px; font-size: 13px; }
+.export-field input { width: 100%; box-sizing: border-box; }
+.export-presets { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
+.export-preset { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left; height: auto; padding: 8px 10px; white-space: normal; }
+.export-preset .dim { font-size: 12px; }
+.export-preset.on { background: var(--dblue); color: var(--cream); }
+.export-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.export-bar { height: 8px; background: var(--outline); }
+.export-bar i { display: block; height: 100%; width: 0; background: var(--lgreen); transition: width 0.3s ease; }
+.export-status[data-s=error] { color: var(--lred); }
+.export-status { margin: 0; min-height: 1.2em; font-size: 13px; }
+.export-history .export-file { align-items: center; }
+.export-history .export-file.is-gone { opacity: 0.55; }
+.export-path { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.export-from p { margin: 4px 0 12px; }

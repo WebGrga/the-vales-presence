@@ -8,6 +8,7 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import os from 'node:os';
 import { readJson, writeJson, studioPath } from './files.js';
+import { entryOf, addUpload } from './upload-history.js';
 import { readOptions, readUpload, updateUpload } from './store.js';
 import {
   buildMeta, clientFrom, pkce, authUrl, redirectFor, storeToken, tokenFresh, TOKEN_URL, UPLOAD_URL, THUMB_URL,
@@ -186,9 +187,11 @@ export async function uploadProject({ projectDir, dataDir, dry = false, fetchImp
       } catch (e) { thumbNote = `The video is up, but the thumbnail failed: ${e.message}`; }
     }
     if (dry) await writeJson(path.join(projectDir, 'studio', 'upload-dry.json'), { at: new Date().toISOString(), body, requests: log });
-    return set({
+    const done = await set({
       status: 'done', dry, videoId: id, url: dry ? null : `https://youtu.be/${id}`, studio: dry ? null : `https://studio.youtube.com/video/${id}/edit`,
       bytes: total, total, ms: Date.now() - t0, at: new Date().toISOString(), thumbNote, session: null, error: null, title, privacy: fields.privacy,
     });
+    try { await addUpload(projectDir, entryOf(done, thumbOpt)); } catch {} // the history never stops an upload that worked
+    return done;
   }
 }

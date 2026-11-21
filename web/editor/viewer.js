@@ -192,7 +192,7 @@ export function createViewer(store, ui) {
     const v = vids[act];
     load(v, S.finalUrl); v.muted = ui.muted; v.playbackRate = speed; showVid(act);
     if (!near(v.currentTime, t)) v.currentTime = t;
-    badge.textContent = 'final'; badge.hidden = false;
+    badge.textContent = S.finalIsProof ? 'proof' : 'final'; badge.hidden = false;
     if (playing) v.play().catch(() => {}); else v.pause();
   }
   function step(frames) {
@@ -255,7 +255,7 @@ export function createViewer(store, ui) {
     if (!raf) raf = requestAnimationFrame(tick);
   }
   function paintMode() {
-    for (const b of modes.querySelectorAll('button')) { b.classList.toggle('on', b.dataset.m === mode); if (b.dataset.m === 'final') b.hidden = !S.finalUrl; }
+    for (const b of modes.querySelectorAll('button')) { b.classList.toggle('on', b.dataset.m === mode); if (b.dataset.m === 'final') { b.hidden = !S.finalUrl; b.textContent = S.finalIsProof ? 'Proof' : 'Final'; b.title = S.finalIsProof ? 'A quick low-resolution proof of the visuals, to check the look before the full render' : TITLES.final; } }
     el.dataset.mode = mode;
     redactor.onTime(t, mode);
     if (mode !== 'ab' && badge.textContent.includes('·')) badge.hidden = true;
@@ -273,8 +273,9 @@ export function createViewer(store, ui) {
     else if (mode === 'after' && playing) { const i = pieceAt(S.ps, t); act = 1 - act; startPiece(i, t - S.ps[i].at, true); }
     else emitTime();
   }
+  for (const v of vids) v.addEventListener('loadeddata', () => { if (note.textContent.startsWith('This video could not play')) note.hidden = true; }); // it plays now (a moved recording was found again)
   for (const v of vids) v.addEventListener('error', () => {
-    if (v.classList.contains('on')) { note.textContent = 'This video could not play here. A proxy (made by the server) plays everywhere.'; note.hidden = false; }
+    if (v.classList.contains('on')) { note.textContent = 'This video could not play here. If a recording was moved or deleted, find it again in Media (its row says missing). Otherwise a proxy made by the server plays everywhere.'; note.hidden = false; }
   });
 
   paintMode();

@@ -10,6 +10,7 @@ import { slug } from './timeline.js';
 import { describeSources } from './sources.js';
 import { chapters } from './chapters.js';
 import { remuxAll, needsRemux } from './remux.js';
+import { resolveFootage } from '../footage.js';
 
 export const KINDS = ['mp4', 'srt', 'fcpxml', 'otio', 'chapters', 'remux'];
 const EXT = { srt: '.srt', fcpxml: '.fcpxml', otio: '.otio', chapters: '.chapters.txt' };
@@ -70,7 +71,7 @@ export async function exportProject(dir, kind) {
   const edl = readJson(P.edl);
   if (!edl?.items) throw fail(404, 'there is no edit list yet: video/out/edl.json is written by the rough cut');
   if (kind === 'remux') {
-    const files = Object.values(edl.sources || {}).map((s) => (typeof s === 'string' ? s : s?.file)).filter(Boolean).map((r) => path.resolve(P.video, ...String(r).split(/[\\/]/)));
+    const files = Object.values(edl.sources || {}).map((s) => (typeof s === 'string' ? s : s?.file)).filter(Boolean).map((r) => resolveFootage(dir, r));
     const done = await remuxAll(dir, files);
     const bad = done.filter((d) => d.state === 'failed');
     if (!done.length) return { kind, file: null, ms: Date.now() - t0, count: 0, note: 'every recording is already in a container other programs import (.mp4 / .mov): nothing to copy' };

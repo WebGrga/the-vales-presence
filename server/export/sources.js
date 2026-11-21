@@ -4,6 +4,7 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import { freshCopy, needsRemux } from './remux.js';
+import { resolveFootage } from '../footage.js';
 
 // pure: ffprobe's JSON -> { hasVideo, hasAudio, duration, channels, rate }
 export function probeInfo(j) {
@@ -35,7 +36,7 @@ export async function describeSources(edl, videoDir, projectDir = null) {
   await Promise.all(Object.entries(edl?.sources || {}).map(async ([k, s]) => {
     const rel = typeof s === 'string' ? s : s?.file;
     if (!rel) return;
-    const orig = path.resolve(videoDir, ...String(rel).split(/[\\/]/));
+    const orig = projectDir ? resolveFootage(projectDir, rel) : path.resolve(videoDir, ...String(rel).split(/[\\/]/));
     const copy = projectDir ? freshCopy(projectDir, orig) : null;
     const file = copy || orig;
     const name = path.basename(file);

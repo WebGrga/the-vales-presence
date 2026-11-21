@@ -1,5 +1,6 @@
 """Tests of the pure parts of the pipeline:  python test_pipeline.py   (no GPU, no Remotion, no recordings needed)"""
 import copy
+import json
 import os
 import subprocess
 import sys
@@ -336,6 +337,23 @@ class EncoderTests(unittest.TestCase):
                                         *encoders.args(p, name), *(encoders.closed_gop(name) if p == 'final' else []), '-f', 'mp4', '-y', os.devnull],
                                        capture_output=True, text=True)
                     self.assertEqual(r.returncode, 0, r.stderr[-400:])
+
+
+class LinkedFootageTests(unittest.TestCase):
+    def test_a_linked_footage_name_resolves_to_the_real_file(self):
+        with tempfile.TemporaryDirectory() as d:
+            video = os.path.join(d, 'video')
+            os.makedirs(os.path.join(video, 'footage'))
+            os.makedirs(os.path.join(video, 'out'))
+            real = os.path.join(d, 'elsewhere', 'big.mkv')
+            with open(os.path.join(video, 'footage', '.links.json'), 'w', encoding='utf-8') as f:
+                json.dump({'big.mkv': real, 'bad.mkv': 'relative/x.mkv'}, f)
+            cut = pipelib.Cut(video)
+            self.assertEqual(cut.p('footage/big.mkv'), real)
+            self.assertEqual(cut.p('footage' + chr(92) + 'big.mkv'), real)
+            self.assertEqual(cut.p('footage/bad.mkv'), os.path.join(video, 'footage', 'bad.mkv'))
+            self.assertEqual(cut.p('footage/other.mkv'), os.path.join(video, 'footage', 'other.mkv'))
+            self.assertEqual(cut.p('out/edl.json'), os.path.join(video, 'out', 'edl.json'))
 
 
 if __name__ == '__main__':

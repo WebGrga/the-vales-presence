@@ -84,6 +84,8 @@ export function mountStageBar(el, app) {
     const list = [];
     if (a.answer) list.push(button('question', 'Answer', 'The agent is waiting for your answer: open its questions', () => app.emit('focus-question', { type: 'focus-question' }), 'ask'));
     if (a.go) list.push(button('go', 'Go', `Run “${a.cur.title}”`, () => call('go'), 'go'));
+    // after Stop or a failed stage: go on from the files already there (the last final, a finished rough) without paying for a new run
+    if (a.keep && p.view?.keep) { const k = p.view.keep; list.push(button('keep', k.mode === 'back' ? 'Back to the last version' : 'Use what is there', k.text, () => call('keep'), 'calm')); }
     if (a.stop) list.push(button('stop', 'Stop', a.cur?.state === 'queued' ? 'Leave the line: do not run this stage' : 'Stop the agent', () => call('stop'), 'warn'));
     if (a.resume) list.push(button('go', 'Resume', 'Clear the halt and carry on', () => call('resume'), 'go'));
     if (a.approve) list.push(button(a.cur.lock ? 'lock' : 'keep', a.approveLabel, a.cur.lock ? 'Approve, and lock the talk: nothing after this can change a word of it' : 'Approve this stage', () => openPop('approve', a), 'go'));

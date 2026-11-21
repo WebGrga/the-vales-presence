@@ -134,3 +134,9 @@
 .st-upstatus p { margin: 8px 0 0; font-size: 13px; }
 .st-upstatus[data-s="error"] p:first-child { color: var(--lred); }
 .st-upstatus[data-s="done"] p:first-child { color: var(--lgreen); }
+
+/* the upload history */
+.st-uphist-list { display: flex; flex-direction: column; gap: 10px; }
+.st-uphist-row { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; }
+.st-uphist-row img, .st-uphist-row .st-thumb-missing { width: 96px; flex: none; aspect-ratio: 16 / 9; object-fit: cover; }
+.st-uphist-row a { overflow-wrap: anywhere; }

@@ -59,12 +59,21 @@ export function createStore(app, id) {
     loadProxy();
   }
 
-  // the rendered final (video/out/final.mp4) when there is one: its URL with its time, so a new render plays fresh
+  // the rendered video to look at: the final (video/out/final.mp4), or the agent's proof (video/out/proof.mp4: a cheap 540p render of the same
+  // timeline) when it is newer, so a wrong look shows before the full render. -> its URL with its time, so a new render plays fresh; S.finalIsProof
   async function readFinal() {
-    try {
-      const r = await fetch(media('video/out/final.mp4'), { method: 'HEAD', cache: 'no-cache' });
-      return r.ok ? `${media('video/out/final.mp4')}?v=${encodeURIComponent(r.headers.get('last-modified') || Date.now())}` : null;
-    } catch { return null; }
+    const head = async (name) => {
+      try {
+        const r = await fetch(media(`video/out/${name}`), { method: 'HEAD', cache: 'no-cache' });
+        if (!r.ok) return null;
+        const mod = r.headers.get('last-modified') || '';
+        return { name, mod, t: Date.parse(mod) || 0, url: `${media(`video/out/${name}`)}?v=${encodeURIComponent(mod || Date.now())}` };
+      } catch { return null; }
+    };
+    const [fin, proof] = await Promise.all([head('final.mp4'), head('proof.mp4')]);
+    const pick = fin && proof ? (proof.t > fin.t ? proof : fin) : fin || proof;
+    S.finalIsProof = pick?.name === 'proof.mp4';
+    return pick ? pick.url : null;
   }
 
   // your visual edits (redactions.json, event-edits.json) and the review items the stages wrote; a missing file is null
@@ -251,7 +260,7 @@ export function createStore(app, id) {
     app.on('files', (m) => {
       if (m.project && m.project !== id) return;
       const paths = (m.paths || []).map((p) => String(p).replace(/\\/g, '/'));
-      if (paths.some((p) => /out\/(edl\.json|rough-words\.json|events\.json)$/.test(p))) load();
+      if (paths.some((p) => /out\/(edl\.json|rough-words\.json|events\.json|proof\.mp4|final\.mp4)$/.test(p))) load();
       else if (paths.some((p) => /out\/(redactions|event-edits|review-items)\.json$/.test(p))) readEdits().then(() => emit('edits'));
       else if (paths.some((p) => /out\/cuts(-review)?\.json$/.test(p))) reloadCuts();
       else if (paths.some((p) => /work\/(proxy|peaks)\//.test(p))) loadProxy();
@@ -260,11 +269,18 @@ export function createStore(app, id) {
     app.on('review-items', (m) => { if ((!m.project || m.project === id) && !m.short) readEdits().then(() => emit('edits')); }),
   ];
 
+  // the agent renders a proof while it works and nothing says so: look for a new one now and then (a HEAD request each), and show it
+  const proofTimer = setInterval(async () => {
+    if (!S.edl || document.hidden) return;
+    const url = await readFinal();
+    if (url !== S.finalUrl) load();
+  }, 10000);
+
   return {
     S, load, choose, note, strike, undo, redo, resetWorking, flush, clipUrl, editWorking, saveEdits,
     on(fn) { fns.add(fn); return () => fns.delete(fn); },
     restorable: (cid) => !!S.edl && restorable(S.edl.items, S.cuts.find((c) => c.id === cid)),
     media,
-    dispose() { onLeave(); removeEventListener('pagehide', onLeave); offs.forEach((o) => o()); clearTimeout(saveTimer); clearTimeout(workTimer); clearTimeout(retryTimer); fns.clear(); },
+    dispose() { clearInterval(proofTimer); onLeave(); removeEventListener('pagehide', onLeave); offs.forEach((o) => o()); clearTimeout(saveTimer); clearTimeout(workTimer); clearTimeout(retryTimer); fns.clear(); },
   };
 }

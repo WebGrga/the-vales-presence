@@ -1,7 +1,9 @@
 // The media bin: the project's footage (GET .../footage), which recordings the edit uses, the rough; drop files on it
 // (or on the whole editor) to add footage: each file goes up as its own raw body with an x-name header and a progress
-// bar. Click a recording to play it from the start in Before.
+// bar. Click a recording to play it from the start in Before. "By path" adds a recording where it is (Link, saves space) or as a copy;
+// each row has Rename, Replace, Find again (a linked file that moved shows as missing) and Remove (media-bin-actions.js).
 import { h, icon, button } from '../shell/dom.js';
+import { binActions } from './media-bin-actions.js';
 
 const VIDEO = /\.(mp4|mkv|mov|webm|m4v|avi|mts|m2ts)$/i, AUDIO = /\.(wav|mp3|m4a|aac|flac|ogg)$/i;
 const size = (n) => (n > 1e9 ? (n / 1e9).toFixed(1) + ' GB' : n > 1e6 ? Math.round(n / 1e6) + ' MB' : Math.max(1, Math.round(n / 1e3)) + ' KB');
@@ -11,8 +13,10 @@ export function createMediaBin(app, store, ui) {
   const list = h('div.bin-list');
   const input = h('input', { type: 'file', multiple: true, accept: 'video/*,audio/*', hidden: true });
   const add = button('upload', 'Add footage', 'Add recordings to this project (or drop them here)', () => input.click(), 'small');
-  const el = h('div.bin', list, h('div.bin-foot', add, input, h('span.dim', 'or drop files here')));
+  const byPath = button('folder', 'By path', 'Add a recording by its path: link it where it is (saves space), or copy it in', () => acts.addPath(), 'small');
+  const el = h('div.bin', list, h('div.bin-foot', add, byPath, input, h('span.dim', 'or drop files')));
   let files = [];
+  const acts = binActions({ app, pid, refresh: () => refresh() });
 
   input.addEventListener('change', () => { upload([...input.files]); input.value = ''; });
 
@@ -25,20 +29,28 @@ export function createMediaBin(app, store, ui) {
     const rows = [];
     for (const f of files) {
       const key = used.get(String(f.path || '').replace(/^video\//, '')) || used.get('footage/' + f.name);
-      const row = h('button.bin-item.calm', { type: 'button', title: key ? `Play ${f.name} as recorded (Before)` : `${f.name} is not in the edit yet` },
-        icon(AUDIO.test(f.name) ? 'music' : 'film', true), h('span.bin-name', f.name), h('span.dim', size(f.size || 0)),
-        key ? h('span.bin-tag.pixel', key) : h('span.bin-tag.off.pixel', 'new'));
-      if (key) row.addEventListener('click', () => ui.seekSource(key, 0));
-      rows.push(row);
+      const play = h('button.bin-main.calm', { type: 'button', disabled: !!f.missing, title: f.missing ? `${f.name} cannot be found where it was linked` : key ? `Play ${f.name} as recorded (Before)` : `${f.name} is not in the edit yet` },
+        icon(AUDIO.test(f.name) ? 'music' : 'film', true), h('span.bin-name', f.name), h('span.dim', f.missing ? '' : size(f.size || 0)),
+        f.linked ? h('span.bin-tag.pixel', { title: f.target }, 'link') : null,
+        f.missing ? h('span.bin-tag.miss.pixel', 'missing') : key ? h('span.bin-tag.pixel', key) : h('span.bin-tag.off.pixel', 'new'));
+      if (key && !f.missing) play.addEventListener('click', () => ui.seekSource(key, 0));
+      const act = (ic, label, fn) => { const b = h('button.bin-act.calm', { type: 'button', title: label, 'aria-label': label, on: { click: (e) => { e.stopPropagation(); fn(f); } } }, icon(ic, true)); return b; };
+      rows.push(h('div.bin-item' + (f.missing ? '.is-missing' : ''), play,
+        h('span.bin-acts', f.missing ? act('folder', `Find ${f.name} again`, (x) => acts.relink(x)) : null,
+          act('note', `Rename ${f.name}`, (x) => acts.rename(x)), act('restore', `Replace ${f.name} with another recording`, (x) => acts.replace(x)),
+          act('cross', `Remove ${f.name}`, (x) => acts.remove(x)))));
     }
     if (S.edl) rows.push(h('div.bin-item.static', icon('scissors', true), h('span.bin-name', 'Edit list'), h('span.dim', `${S.ps.length} pieces · ${S.cuts.length} cuts`)));
-    if (!rows.length) rows.push(h('p.dim.bin-empty', 'No footage yet. Drop your recordings here.'));
+    if (!files.length) rows.unshift(h('p.dim.bin-empty', 'No footage yet. Drop your recordings here, or add one by its path.'));
     list.replaceChildren(...rows);
   }
 
   function upload(list) {
     const ok = list.filter((f) => VIDEO.test(f.name) || AUDIO.test(f.name));
     if (ok.length < list.length) app.toast('Only video and sound files go into the footage.', 'warn');
+    // the app window gives a file's own path: then the choice (copy or link) is offered, link first above 200 MB
+    const own = ok.filter((f) => f.path && /^([a-z]:[\\/]|\/)/i.test(f.path));
+    if (own.length) { acts.addPath(own[0].path, own[0].size); ok.splice(0, ok.length, ...ok.filter((f) => !own.includes(f))); }
     for (const f of ok) one(f);
   }
   function one(f) {

@@ -132,6 +132,16 @@ def lock_paths(workshop):
     return main, found
 
 
+def footage_links(video):
+    """{name: absolute path} of the recordings linked in place: video/footage/.links.json ({} when there are none)."""
+    try:
+        with open(os.path.join(video, 'footage', '.links.json'), encoding='utf-8') as f:
+            data = json.load(f)
+    except (OSError, ValueError):
+        return {}
+    return {k: v for k, v in data.items() if isinstance(v, str) and os.path.isabs(v)} if isinstance(data, dict) else {}
+
+
 class Cut:
     """All the paths of one cut. `video` is <workshop>/video."""
 
@@ -157,8 +167,14 @@ class Cut:
         os.makedirs(self.work, exist_ok=True)
 
     def p(self, rel):
-        """A path relative to video/ (the way edl.json names sources)."""
-        return os.path.join(self.video, *rel.replace('\\', '/').split('/'))
+        """A path relative to video/ (the way edl.json names sources). A footage name that is a link (video/footage/.links.json,
+        written by the app when a recording is linked in place instead of copied) gives the real file's path."""
+        parts = rel.replace('\\', '/').split('/')
+        if len(parts) == 2 and parts[0] == 'footage':
+            target = footage_links(self.video).get(parts[1])
+            if target:
+                return target
+        return os.path.join(self.video, *parts)
 
 
 def now_iso():

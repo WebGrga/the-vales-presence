@@ -122,7 +122,7 @@ export function plainChoices(typed, pending) {
 
 // the current stage and what its buttons are: go (an agent stage not yet running), approve / sendback (a stage waiting
 // for the user), approveLabel ("Approve & lock" when the gate locks files), answer (the agent waits for your answer).
-// When the server's view lists its actions ('go', 'stop', 'answer', 'approve', 'sendback', 'resume'), those win.
+// When the server's view lists its actions ('go', 'stop', 'answer', 'approve', 'sendback', 'resume', 'keep'), those win.
 // Stop shows only while the agent works or waits in line, never while it waits for your answer.
 export function actions(project, cs) {
   const cur = cs.find((c) => c.id === project?.at) || null;
@@ -134,7 +134,7 @@ export function actions(project, cs) {
   const server = project?.view?.actions;
   if (Array.isArray(server)) {
     const has = (a) => server.includes(a);
-    return { cur, halted, asking, go: has('go') && !asking, approve: has('approve'), sendback: has('sendback'), stop: has('stop') && !asking, resume: has('resume'), answer: asking, approveLabel: label };
+    return { cur, halted, asking, go: has('go') && !asking, approve: has('approve'), sendback: has('sendback'), stop: has('stop') && !asking, resume: has('resume'), keep: has('keep') && !asking, answer: asking, approveLabel: label };
   }
   return {
     cur,

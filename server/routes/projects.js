@@ -4,6 +4,7 @@ import path from 'node:path';
 import { view as stageView } from '../stages.js';
 import { receive } from '../upload.js';
 import { writeJsonAtomic } from '../projects.js';
+import { listFootage } from '../footage.js';
 
 const ID = '([a-z0-9][a-z0-9_-]{0,79})';
 const P = (tail = '') => new RegExp(`^/api/projects/${ID}${tail}$`, 'i');
@@ -17,12 +18,7 @@ const reply = (ctx, res, r) => ctx.send(res, r?.error ? 409 : 200, r);
 // the stage view with its live part (a question waiting, a sleeping stage, the line, Keep) when the runner is there
 const viewOf = (ctx, p, r) => { if (!r) return null; try { if (ctx.runner?.view) return ctx.runner.view(p.id); } catch {} return stageView(p, r); };
 
-function footageList(dir) {
-  const d = path.join(dir, 'video', 'footage');
-  let names = [];
-  try { names = fs.readdirSync(d).filter((f) => !f.startsWith('.')); } catch {}
-  return names.map((name) => { let st = null; try { st = fs.statSync(path.join(d, name)); } catch {} return { name, size: st?.size || 0, partial: name.endsWith('.part'), path: `video/footage/${name}` }; }).filter((f) => !f.partial);
-}
+const footageList = listFootage; // names, sizes, links (a linked recording may be missing) and which sources of the edit use each
 
 export default [
   { method: 'GET', path: '/api/projects', handler: async (req, res, ctx) => {
