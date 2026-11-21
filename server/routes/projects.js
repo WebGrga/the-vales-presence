@@ -26,7 +26,7 @@ function footageList(dir) {
 
 export default [
   { method: 'GET', path: '/api/projects', handler: async (req, res, ctx) => {
-    const list = need(ctx, 'projects').list().map((p) => { const r = ctx.projects.recipeOf(p); return { ...p, view: viewOf(ctx, p, r) }; });
+    const list = need(ctx, 'projects').list().map((p) => { const r = ctx.projects.recipeOf(p); return { ...p, view: viewOf(ctx, p, r), ...homeMeta(ctx.projectDir(p.id)) }; });
     ctx.send(res, 200, { projects: list });
   } },
   { method: 'POST', path: '/api/projects', handler: async (req, res, ctx) => {
@@ -72,6 +72,9 @@ export default [
     const r = applyDraft(readDrafts(ctx.projectDir(id)), b.key, b.text);
     if (r.error) return ctx.send(res, 400, r);
     writeJsonAtomic(draftsFile(ctx.projectDir(id)), r.drafts);
+// pin and last-opened (the Projects home), kept in the project's own .presence/meta.json
+function homeMeta(dir) { try { const m = JSON.parse(fs.readFileSync(path.join(dir, '.presence', 'meta.json'), 'utf8')); return { pinned: !!m.pinned, opened: m.opened || null }; } catch { return { pinned: false, opened: null }; } }
+
     ctx.send(res, 200, { ok: true });
   } },
 ];

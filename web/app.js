@@ -6,6 +6,7 @@ import { api, createSocket, mediaUrl } from './shell/api.js';
 import { toast } from './shell/toast.js';
 import { h, icon } from './shell/dom.js';
 import { mountPicker } from './shell/picker.js';
+import { mountHome } from './shell/home.js';
 import { mountStageBar } from './shell/stagebar.js';
 import { createTabs, TABS } from './shell/tabs.js';
 import { needsSetup } from './setup/first.js';
@@ -59,12 +60,14 @@ sock.on('socket', (m) => {
 
 // ------------------------------------------------------------------ the frame
 const top = document.getElementById('top');
-const brand = h('div.brand', icon('tower'), h('span.display', 'The Vale’s Presence'));
+const brand = h('button.brand.calm', { type: 'button', title: 'All projects', 'aria-label': 'All projects', on: { click: () => app.home.open() } }, icon('tower'), h('span.display', 'The Vale’s Presence'));
 const pickEl = h('div.picker');
 const tabBar = h('nav.tabs', { 'aria-label': 'Rooms' });
 const live = h('span.live', { title: 'Connecting…' });
 const keysBtn = h('button.calm.icon-only.keys-btn', { type: 'button', title: 'Keyboard keys (?)', 'aria-label': 'Keyboard keys', on: { click: () => toggleKeys() } }, '?');
 top.append(brand, pickEl, h('div.grow'), tabBar, keysBtn, live);
+app.home = mountHome(document.getElementById('rooms'), app);
+app.openTab = (id) => { app.home.close(); tabs.show(id); };
 const picker = mountPicker(pickEl, app);
 mountStageBar(document.getElementById('stagebar'), app);
 const tabs = createTabs(tabBar, document.getElementById('rooms'), app);
@@ -90,6 +93,7 @@ async function selectProject(id, tab) {
   const changed = (p?.id || null) !== (current?.id || null);
   current = p;
   try { if (p) localStorage.setItem(LAST, p.id); } catch {}
+  if (p) { app.home.close(); if (changed) api(`/api/projects/${encodeURIComponent(p.id)}/opened`, {}).catch(() => {}); }
   picker.update(p);
   sock.emit('select', { type: 'select', project: p });
   if (tab) tabs.show(tab); else if (changed) tabs.projectChanged();
@@ -118,19 +122,21 @@ addEventListener('keydown', (e) => {
 
 async function boot() {
   const [, pid, tab] = (location.hash.match(/^#\/([^/]*)\/?([a-z]*)/) || []);
+  // only a project you chose opens: the one in the address, or the one you had open last time; otherwise the Projects home
   let id = pid && pid !== '-' ? decodeURIComponent(pid) : null;
   if (!id) { try { id = localStorage.getItem(LAST); } catch {} }
-  if (!id) {
-    try { const list = await api('/api/projects'); const arr = Array.isArray(list) ? list : list?.projects || []; id = arr[0]?.id || null; } catch {}
-  }
   const setup = needsSetup(app.api); // asked at once; the first doctor run takes a few seconds
   await selectProject(id, TABS.some((t) => t.id === tab) ? tab : 'edit');
-  if (await setup) { tabs.show('setup'); app.route(); toast('Something the studio needs is missing: the Setup tab shows what and how to fix it.', 'error'); }
-  else if (!current) picker.open();
+  if (!current || tab === 'home') app.home.open(); // at once: the page never sits empty while the doctor runs
+  if (await setup) {
+    if (current && !app.home.isOpen()) { tabs.show('setup'); app.route(); }
+    toast('Something the studio needs is missing: the Setup tab shows what and how to fix it.', 'error');
+  }
 }
 addEventListener('hashchange', () => {
   const [, pid, tab] = (location.hash.match(/^#\/([^/]*)\/?([a-z]*)/) || []);
   const id = pid && pid !== '-' ? decodeURIComponent(pid) : null;
+  if (tab === 'home') return;
   if (id && id !== current?.id) selectProject(id, tab || tabs.shown);
   else if (tab && tab !== tabs.shown) tabs.show(tab);
 });
