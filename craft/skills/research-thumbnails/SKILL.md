@@ -5,7 +5,7 @@ description: Study the thumbnails of the niche's outlier videos (already saved b
 
 # Research thumbnails: what the winners look like at feed size
 
-Use the pictures research-titles saved in `studio/research/thumbs/<id>.jpg` (the list is `studio/research/videos.json`). Look at the real images: open them with Read (they are pictures; you can see them).
+Use the pictures research-titles saved in `studio/research/thumbs/<id>.jpg` (the list is `studio/research/videos.json`). Look at the real images: open them with Read (they are pictures; you can see them). Start with the videos marked `"starred": true` (the user's chosen models, also in `models`), skip `"hidden": true` ones, and include some `tier: "flop"` pictures to see what the weak ones lack.
 
 ## Look at them the way a viewer does
 

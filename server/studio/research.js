@@ -18,6 +18,27 @@ export function outlierScore(views, channelMedian) {
   return Math.round((views / channelMedian) * 10) / 10;
 }
 
+// where a video sits in its niche: a hit (2x its channel's usual or more), a flop (under half) or in between
+export function tierOf(outlier) {
+  if (!Number.isFinite(outlier)) return undefined;
+  return outlier >= 2 ? 'top' : outlier < 0.5 ? 'flop' : 'typical';
+}
+
+// from one channel's recent videos (records with views): the best, a few typical ones and the real flops,
+// so a comparison sees the whole channel and not only its hits. Shorts are not offered (the caller leaves them out).
+export function sampleChannel(videos, { top = 0, typical = 2, flop = 2 } = {}) {
+  const views = videos.map((v) => v.views).filter(Number.isFinite);
+  const scored = videos.map((v) => {
+    const m = channelMedian(views, v.views);
+    return m === undefined ? { ...v } : { ...v, channelMedian: Math.round(m), outlier: outlierScore(v.views, m) };
+  }).filter((v) => Number.isFinite(v.outlier));
+  const by = (t) => scored.filter((v) => tierOf(v.outlier) === t);
+  const best = by('top').sort((a, b) => b.outlier - a.outlier).slice(0, top);
+  const flops = by('flop').sort((a, b) => a.outlier - b.outlier).slice(0, flop);
+  const mid = by('typical').sort((a, b) => Math.abs(1 - a.outlier) - Math.abs(1 - b.outlier)).slice(0, typical);
+  return [...best, ...mid, ...flops];
+}
+
 // a channel's usual views: the median of its recent videos, leaving out the one being scored
 export function channelMedian(channelViews, exceptViews) {
   const xs = [...channelViews];
@@ -54,10 +75,13 @@ export function parseVideos(obj) {
     for (const k of ['url', 'channel', 'channelId', 'thumb', 'source', 'note', 'published', 'avatar']) if (str(x[k])) v[k] = str(x[k], 600);
     for (const k of ['views', 'channelMedian', 'outlier', 'duration', 'subscribers']) if (num(x[k]) !== undefined) v[k] = num(x[k]);
     if (v.outlier === undefined) { const o = outlierScore(v.views, v.channelMedian); if (o !== undefined) v.outlier = o; }
+    const t = tierOf(v.outlier); if (t) v.tier = t;
+    if (x.starred === true) v.starred = true;
+    if (x.hidden === true) v.hidden = true;
     out.push(v);
   }
   out.sort((a, b) => (b.outlier ?? -1) - (a.outlier ?? -1) || (b.views ?? -1) - (a.views ?? -1));
-  return { query: str(obj?.query, 200), topic: str(obj?.topic, 200), fetched: str(obj?.fetched, 40), notes: str(obj?.notes, 4000), videos: out };
+  return { query: str(obj?.query, 200), topic: str(obj?.topic, 200), fetched: str(obj?.fetched, 40), notes: str(Array.isArray(obj?.notes) ? obj.notes.map((n) => `- ${str(n, 600)}`).join(String.fromCharCode(10)) : obj?.notes, 4000), videos: out };
 }
 
 // title features, as data: key, label, test

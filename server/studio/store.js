@@ -6,7 +6,7 @@ import path from 'node:path';
 import { STUDIO, TEXTS, FILES, studioPath, readText, readJson, writeJson, writeAtomic, mtimeMs } from './files.js';
 import { saveDecision, backupName, MAX_TEXT } from './text-save.js';
 import { parseOptions, applyOp, choicesOf, withChoices } from './options.js';
-import { parseVideos, patterns } from './research.js';
+import { readResearch } from './research-runs.js';
 import { uploadFields } from './upload-plan.js';
 
 const queues = new Map();
@@ -137,11 +137,10 @@ function probeDuration(file, mtime) {
 
 // everything the Studio tab shows, in one read
 export async function readStudio(dir) {
-  const [plan, script, titles, thumbs, feed, upload, videosRaw] = await Promise.all([
+  const [plan, script, titles, thumbs, feed, upload, research] = await Promise.all([
     readTextFile(dir, 'plan'), readTextFile(dir, 'script'), readOptions(dir, 'titles'), readOptions(dir, 'thumbs'),
-    readFeed(dir), readUpload(dir), readJson(file(dir, FILES.videos), null),
+    readFeed(dir), readUpload(dir), readResearch(dir),
   ]);
-  const research = parseVideos(videosRaw);
   await stampFiles(dir, thumbs.options);
   const finalVideo = upload.fields.video;
   let video = null;
@@ -150,7 +149,7 @@ export async function readStudio(dir) {
     const st = await fs.stat(abs);
     video = { path: finalVideo, bytes: st.size, mtime: Math.round(st.mtimeMs), duration: await probeDuration(abs, st.mtimeMs) };
   } catch {}
-  return { plan, script, research: { ...research, patterns: patterns(research.videos) }, titles, thumbs, feed, upload: { ...upload, video } };
+  return { plan, script, research, titles, thumbs, feed, upload: { ...upload, video } };
 }
 
 export { parseOptions };
