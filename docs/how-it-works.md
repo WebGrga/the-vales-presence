@@ -70,7 +70,7 @@ The **Context** tab shows what the agent reads at each stage, as a map: one colu
 
 ## Shorts from a long video
 
-The pick stage reads the whole talk and writes the moments that stand alone (a strong first line, one point, a payoff, under a minute) to `video/out/shorts/picks.json` (or `studio/shorts.json`). The **Shorts** tab shows each as a 9:16 card that plays its stretch, with Keep, Drop and a note, saved at once to `studio/shorts-review.json` so the agent can revise its list without losing your clicks. **Cut these** approves the pick review with your choices in plain words and starts the cutting stage.
+The pick stage reads the whole talk and writes the moments that stand alone (a strong first line, one point, a payoff, under a minute) to `studio/shorts/picks.json`. The **Shorts** tab shows each as a 9:16 card that plays its stretch, with Keep, Drop and a note, saved at once to `studio/shorts-review.json` so the agent can revise its list without losing your clicks. **Cut these** approves the pick review with your choices in plain words and starts the cutting stage.
 
 ## Export
 

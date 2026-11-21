@@ -74,7 +74,7 @@ export async function mount(root, app) {
     bin: panel('p-bin', 'folder', 'Media'),
     tr: panel('p-tr', 'text', 'Transcript'),
     view: panel('p-view', 'film', 'Viewer'),
-    cuts: panel('p-cuts', 'scissors', 'Cuts', h('span.dim.cut-keys', '↑↓ move · K keep · R restore')),
+    cuts: panel('p-cuts', 'scissors', 'Cuts', h('span.dim.cut-keys', '↑↓ move · C keep cut · R restore words')),
     agent: panel('p-agent', 'agent', 'Agent'),
     tl: panel('p-tl', 'film', 'Timeline'),
   };

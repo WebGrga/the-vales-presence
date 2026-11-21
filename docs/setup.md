@@ -101,20 +101,44 @@ npm run test:engine    # the engine (Python with numpy and Pillow, and ffmpeg)
 
 ## Settings
 
-| what | how |
-|---|---|
-| another port | `PRESENCE_PORT=4900 npm start` (PowerShell: `$env:PRESENCE_PORT=4900; npm start`) |
-| projects on another drive | `PRESENCE_DATA=D:\presence-data npm start` |
-| do not open a browser | `npm start -- --no-open` |
-| a specific Python for the engine tests | `PRESENCE_PYTHON=/path/to/python` |
-| the model | Claude Opus by default, at medium effort; Sonnet is the cheaper choice (`data/settings.json`) |
-
-The server listens on 127.0.0.1 only: nothing on your network can reach it.
+The port, the data folder, the model and the rest are in [configuration.md](configuration.md). The two you may need first: `PRESENCE_PORT=4900 npm start` for another port, and `npm start -- --no-open` to keep the browser from opening. The server listens on 127.0.0.1 only: nothing on your network can reach it.
 
 ## When something goes wrong
 
-- **The Setup tab shows a cross after installing.** Programs installed while a terminal is open are not on that terminal's PATH. Close it, open a new one, and start the app again.
+Each answer has one home. For how the screen behaves, see [using.md](using.md).
+
+**Starting the app**
+
+- **"port 4848 is in use: is the server already running?"** The app is already running (look for its tab at http://localhost:4848), or another program holds the port. Stop the other copy with Ctrl+C in its terminal, or start this one on another port: `PRESENCE_PORT=4900 npm start`.
+- **The browser did not open.** Open http://localhost:4848 yourself. On a server with no browser, start with `npm start -- --no-open`.
+- **"Cannot find package" when starting.** Run `npm install` in the repository folder. The overlay renderer needs its own: `npm install --prefix engine/remotion`.
+
+**The Setup tab**
+
+- **A cross after installing.** Programs installed while a terminal is open are not on that terminal's PATH. Close it, open a new one, start the app again, and press **Check again**.
+- **"Python 3 with numpy and Pillow": "numpy and Pillow not installed for this Python".** The `python` on your PATH is a different one from where you installed the packages. Run `python -m pip install numpy pillow` with that same `python`, or put the Python that has them first on your PATH. (`PRESENCE_PYTHON` is only for the engine tests: [CONTRIBUTING.md](../CONTRIBUTING.md#tests).)
 - **"python" opens the Microsoft Store.** Windows ships a stand-in named python. Install Python as above, or turn the stand-in off in Settings, Apps, Advanced app settings, App execution aliases.
-- **Claude Code login.** Run `claude` in a terminal and log in there; the app uses the same login. The Setup tab shows the plan you are logged in with, never your email.
-- **No GPU encoder.** The GPU check says which encoder works. "CPU (libx264)" is fine, only slower. Updating the graphics driver is the usual fix for a GPU that is there but not used.
-- **Little disk space.** A long video's render cache can take 20 GB or more. The `video/out/work` folder of a finished project is a cache and can be deleted.
+- **"Claude Code login: not logged in".** Run `claude` in a terminal and log in there; the app uses the same login. The Setup tab shows the plan you are logged in with, never your email.
+- **No GPU encoder.** The GPU check says which encoder works. "CPU (libx264)" is fine, only slower. Updating the graphics driver is the usual fix for a GPU that is there but not used. To force one: `PRESENCE_ENCODER` in [configuration.md](configuration.md#environment-variables).
+- **"Remotion ... not installed".** Run `npm install --prefix engine/remotion`. The first overlay render also downloads a headless Chrome, so it needs the internet once.
+- **Research says "yt-dlp was not found".** The research stage uses yt-dlp, which the Setup tab does not check. Install it: `uv tool install yt-dlp` (or `pip install yt-dlp`).
+
+**While a project runs**
+
+- **The project is halted: "A locked file changed after you approved ...".** Something changed the approved rough or edit list. The bar under the chips names the file and the stage. Press **Approve** to accept the new version (it is hashed again), or **Send back** with notes. Why this exists: [how-it-works.md](how-it-works.md#the-lock).
+- **The chip says "waiting for your answer" and nothing moves.** The agent asked you something and waits. Open the Edit tab: the question is in the agent panel (press **Answer**). Nothing runs until you press **Send**.
+- **A stage shows "Stopped. Press Go to run it again", or "The stage failed: ...".** Press **Go** to run it again; the agent continues in the same conversation. The failure text is also in the agent panel.
+- **"The server stopped while this stage ran."** You closed the app (or it crashed) in the middle of a stage. Press **Go**: it resumes the agent's conversation.
+- **A stage is "in line behind ...".** Only a set number of renders run at once (the `heavy` setting). It starts by itself when the one in front ends.
+- **"nothing new for N min ... It may be stuck".** A stage printed nothing for the time set in `quietMinutes`. A long render can be quiet; look at the agent panel, then **Stop** or let it run.
+- **A stage fails and the error mentions a limit or usage.** The agents run on your Claude subscription's limits. When Claude refuses a turn the stage shows "The stage failed: ..." with the reason, and its files so far stay. Wait until the limit resets, then press **Go**. A lower `effort` or the Sonnet model ([configuration.md](configuration.md#settings)) uses less. The app does not retry by itself.
+- **Little disk space.** A long video's render cache can take 20 GB or more. The Setup tab warns under 20 GB free and fails under 5 GB. Delete `video/out/work` of a finished project (it is only a cache), or move the data to a bigger drive with `PRESENCE_DATA`. A render that runs out of disk fails its step: free space and press **Go**. The engine keeps the pieces it finished, so it does not start over.
+- **"Drop your footage in first (video/footage is empty)".** Add footage in the Media panel before approving the Record stage.
+- **Approve & lock says the rough does not have your choices.** You struck words, restored cuts or moved joins since the rough was built. Press **Rebuild with my choices**; see [using.md](using.md#approve-lock-and-send-back).
+- **A video does not play in the viewer.** The browser cannot play that format directly. The viewer says "This video could not play here. A proxy (made by the server) plays everywhere." The server makes a small 540p proxy of each recording in `video/out/work/proxy/`; if it is missing, open the Edit tab again.
+
+**Uploading**
+
+- **Upload to YouTube is greyed out.** The **Before it goes** list on the Upload page says what is missing. Connecting YouTube is a one-time setup: [youtube-upload.md](youtube-upload.md).
+
+If it still fails, the terminal where you ran `npm start` and the project's `.presence/log.jsonl` show what happened. Include them when you [report a bug](../CONTRIBUTING.md#reporting-a-bug), without your footage or private paths.

@@ -43,6 +43,16 @@ npm start
 - **Disk:** about 20 GB free for a long video's render cache.
 - **A GPU is optional.** NVIDIA (NVENC and CUDA), Intel Quick Sync, AMD AMF and Apple VideoToolbox are found by themselves; without one the CPU encodes and transcribes, only slower.
 
+## Quick start
+
+After the [setup](docs/setup.md) and `npm install` above:
+
+1. Run `npm start`. The server starts and **opens http://localhost:4848 in your browser by itself**. To keep the browser from opening, run `npm start -- --no-open` and open the address yourself.
+2. If something is missing, the app opens on the **Setup** tab and shows the fix. Otherwise it opens the project you had open last, or the project picker when there is none.
+3. Press the project picker at the top, name a new project, choose a recipe and press **Create**. Drop your footage into the Media panel and press **Go**. A tour of the whole screen: [docs/using.md](docs/using.md).
+
+To stop the app, press Ctrl+C in the terminal where it runs. To update, stop it, then run `git pull` and `npm install` (and `npm install --prefix engine/remotion`), and start it again. Your projects and settings are in `data/`, which an update never touches. If the port is taken, `PRESENCE_PORT=4900 npm start` uses another: [docs/configuration.md](docs/configuration.md).
+
 ## How a project goes
 
 Pick a recipe when you start a project: **Edit a video** (footage you have), **A video from the idea**, **Edit a Short**, or **Shorts from a long video** (the agent picks the moments, you keep or drop each as a 9:16 card, it cuts the ones you kept). A recipe is a list of stages, shown along the top as chips with the time and cost of each.
@@ -67,6 +77,20 @@ How the lock, the overlay windows, the cached chunks and the sleeping agent work
 - The FCPXML and OTIO exports carry the cut (every kept stretch, linked to your footage), not the overlays.
 - Overlays are React components rendered with Remotion; changing their look means editing a template's code (the agent can do it for you).
 
+## Documentation
+
+In reading order:
+
+1. [Setup](docs/setup.md): install everything, for Windows, macOS and Linux, and what to do when something goes wrong.
+2. [Using the app](docs/using.md): a tour of the screen, from a new project to export, and every keyboard shortcut.
+3. [How it works](docs/how-it-works.md): stages, the lock, overlay windows and chunk caching, the sleeping agent.
+4. [Configuration](docs/configuration.md): settings, environment variables, the engine config file, and where your data lives.
+5. [Customising](docs/customising.md): your own recipes, skills, house rules and overlay templates.
+6. [Thumbnails and AI images](docs/thumbnails-ai-images.md): optional AI backgrounds for thumbnails.
+7. [Uploading to YouTube](docs/youtube-upload.md): the one-time Google setup.
+8. [The engine](engine/README.md): the manual for the Python and ffmpeg engine.
+9. [Contributing](CONTRIBUTING.md): tests, code style, reporting a bug.
+
 ## Folders
 
 | folder | what |
@@ -76,9 +100,10 @@ How the lock, the overlay windows, the cached chunks and the sleeping agent work
 | `engine/` | the editing engine: Python and ffmpeg, Remotion for overlays |
 | `craft/` | what the agent knows: instructions, recipes, skills, house rules |
 | `kit/` | overlay templates, sound effects, caption fonts |
+| `docs/` | the documentation, listed above |
 | `data/` | your projects and settings (never committed) |
 
-Tests: `npm test` (the server and the screen's logic) and `npm run test:engine` (the engine, needs Python with numpy and Pillow, and ffmpeg).
+Tests: `npm test` (the server, the screen's logic and the engine) and `npm run test:engine` (the engine alone; needs Python with numpy and Pillow, and ffmpeg). More in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Made in The Vale
 

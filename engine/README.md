@@ -129,7 +129,7 @@ Environment variables:
 | `PRESENCE_OVERLAY_CODEC` | `png` | how a rendered window is stored (`png`, `utvideo`, `qtrle`, `prores`; part of every window's hash) |
 | `PRESENCE_REMOTION_MODULES` | `engine/remotion/node_modules` | the node_modules `typecheck.py` links |
 
-Every name above can also be set in `presence.local.json` in the repository root (not committed), as the lower-case name without the prefix: `{"sounds": "~/my-sounds", "locks": ".other/locks.json"}`. The environment wins over the file. Use it when the engine is started by something that cannot pass environment variables.
+Every name above except `PRESENCE_CONFIG` and `PRESENCE_WHISPER_DEVICE` (the environment only) can also be set in `presence.local.json` in the repository root (not committed), as the lower-case name without the prefix: `{"sounds": "~/my-sounds", "locks": ".other/locks.json"}`. The environment wins over the file. Use it when the engine is started by something that cannot pass environment variables.
 
 ## Hardware
 
