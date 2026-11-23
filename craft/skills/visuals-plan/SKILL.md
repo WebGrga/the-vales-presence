@@ -37,6 +37,8 @@ The first question is never "what overlay goes here". It is "what does the viewe
 
 One entry per beat, in time order. A good one, from a screen-recorded devlog of a game arena (crowd, judges, a rehearsal mode; face cam bottom-left):
 
+(Every position, name and score in this example is made up to show the form. Yours come only from your own stills and the words of your rough: a Scoreboard, Stat or Compare shows only numbers and names that are said or shown in the video.)
+
 ```
 ## 3. 02:41 to 02:52
 Said: "the judges give it a score and the crowd reacts"

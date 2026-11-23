@@ -27,4 +27,3 @@ In `shorts-bold` the piece called `Stat` there is the big text number, so the co
 
 Each piece moves for under about a second after it starts (and after each time in its props) and then sits still, so the engine draws the held stretches once. Times in props use the keys `at`, `at2` and `[[at, value]]` pairs under `score`, which `engine/holds.py` knows as moments. Springs are snapped to their end value (a scale of 1.0000000002 made Chrome redraw text a pixel lower and failed the hold check).
 
-Stills of every piece on a real frame are in `docs/show-kit/`.
