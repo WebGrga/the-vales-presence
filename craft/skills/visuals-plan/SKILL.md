@@ -30,8 +30,7 @@ The first question is never "what overlay goes here". It is "what does the viewe
 - Never the same component three beats in a row. Mix points, explains, counts and quiet beats.
 - Positions on a screen recording come from a still at that time, never from a guess. If the thing moves, plan one box per stretch.
 - Keep clear of the face cam and of what the speaker is showing.
-- **House rules win.** If they ask for a long video dressed over the top (something always happening), do it: their pace is the ceiling and the "something is always happening" floor. Fill that pace from this plan with more beats of real things to point at, count and name, never with fillers. Over the top is fine when every piece belongs.
-- When a stretch has nothing real to show and the house rules want something moving, use a sound, a ring on what the screen already shows, or a slow zoom on the speaker, never a word.
+- **High quality or nothing.** A visual goes in only where it really shows something. A stretch with nothing worth showing stays clean: never a filler to keep a pace. A pace in the house rules is a ceiling, never a quota. House rules win over this skill; when they ask for a lot happening, find more real things to point at, explain and count, never fillers.
 
 ## Format
 
