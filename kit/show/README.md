@@ -7,13 +7,13 @@ Eight overlay pieces that point at, explain, count or compare something real on 
 | `Callout` | a ring or rounded highlight, an arrow that draws on, then a label that pops | `{x, y, w?, h?, text, side?, color?, size?}` (x, y: a point, or the box's top-left with w and h) |
 | `Spotlight` | dims everything except a box, the edge glows | `{x, y, w, h, text?, dim?, radius?}` |
 | `Inset` | a still from the footage (or any image in `remotion/public/`) in a framed card with a caption | `{src, label?, w?, h?, x?, y?, from?: "left"\|"right"}` |
-| `Flow` | boxes and arrows that build up as they are said | `{nodes: [{id, text, at}], edges?: [{from, to, at?, label?}], layout?: "row"\|"column"\|"cycle", title?, x?, y?, w?}` |
-| `Compare` | two sides, the second arriving at `at2` | `{left: {title, src?, lines?}, right: {...}, at2?, vs?, colors?}` |
+| `Flow` | a small card that appears with its first node and grows as boxes and arrows are said | `{nodes: [{id, text, at}], edges?: [{from, to, at?, label?}], layout?: "row"\|"column"\|"cycle", title?, x?, y?, area?}` |
+| `Compare` | two compact cards (no dimming), the second arriving at `at2` | `{left: {title, src?, lines?}, right: {...}, at2?, vs?, colors?, w?, x?, y?, area?}` |
 | `Stat` | one number counting up | `{value, unit?, label, from?, decimals?, x?, y?, color?}` |
-| `Steps` | a checklist that ticks item by item | `{title?, items: [{text, at}], x?, y?, w?}` |
+| `Steps` | a card that grows by one ticked row per item, as each is said | `{title?, items: [{text, at}], x?, y?, w?, area?}` |
 | `Scoreboard` | named rows whose scores change at given times | `{rows: [{name, score: [[at, value], ...]}], title?, max?, decimals?, unit?, x?, y?, w?, colors?}` |
 
-Every piece also takes `avoid: {x, y, w, h}` (the face-cam corner): a piece that would cover it moves to the nearest free side (Callout puts its label on another side). Every x, y, w, h is a pixel of the frame, so the same props work at 1920x1080 and 1080x1920 (text scales down a little in a vertical frame); read them off a still of the footage at that moment. Each piece's doc comment in `show.tsx` is the full list.
+Every piece also takes `avoid: {x, y, w, h}` (the face-cam corner): a piece that would cover it moves to the nearest free side (Callout puts its label on another side), and Spotlight's dimming leaves it undimmed. Flow, Compare and Steps also take `area: {x, y, w, h}`, an empty part of the frame read off the footage: the card is centred there; without it they sit at the top (Flow, Compare centred, Steps left). They are as big as their content and nothing is drawn before the first node, item or side; labels are measured in the real font, never cut at an edge. Every x, y, w, h is a pixel of the frame, so the same props work at 1920x1080 and 1080x1920 (text scales down a little in a vertical frame); read them off a still of the footage at that moment. Each piece's doc comment in `show.tsx` is the full list.
 
 ## Use
 
