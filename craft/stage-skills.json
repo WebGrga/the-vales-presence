@@ -4,6 +4,8 @@
   "visuals": ["visuals-plan", "visuals-overlays", "cut-punch-in", "cut-frame-screen"],
   "short/rough": ["edit-rough-handover", "cut-dialogue-pass", "cut-speed-waits", "cut-fit-length", "shorts-reframe-captions"],
   "short/visuals": ["visuals-plan", "visuals-overlays", "shorts-reframe-captions", "cut-punch-in", "cut-frame-screen"],
+  "video-short/rough": ["edit-rough-handover", "cut-dialogue-pass", "cut-speed-waits", "cut-fit-length", "shorts-reframe-captions"],
+  "video-short/visuals": ["visuals-plan", "visuals-overlays", "shorts-reframe-captions", "cut-punch-in", "cut-frame-screen"],
   "shorts-from-long/pick": ["shorts-pick-moments", "cut-fit-length"],
   "shorts-from-long/cut": ["shorts-reframe-captions", "cut-dialogue-pass", "cut-fit-length", "visuals-overlays", "cut-frame-screen"],
   "studio": ["research-titles", "research-thumbnails", "title-options", "thumbnail-options", "judge-package", "upload-youtube", "plan-video", "script-video"],

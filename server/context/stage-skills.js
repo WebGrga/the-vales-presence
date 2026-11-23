@@ -27,6 +27,17 @@ export function skillsFor(shipped, mine, recipe, stage) {
   return { skills: [], from: 'none', key: null };
 }
 
+// the same for a recipe made in another format (`recipe` "video-short", `base` "video"): the format's own list wins, else the base recipe's
+export function skillsForFormat(shipped, mine, recipe, stage, base) {
+  if (base && base !== recipe) {
+    for (const [doc, from] of [[listOf(mine), 'yours'], [listOf(shipped), 'shipped']]) {
+      const key = keyOf(recipe, stage);
+      if (Array.isArray(doc[key])) return { skills: clean(doc[key]), from, key };
+    }
+  }
+  return skillsFor(shipped, mine, base || recipe, stage);
+}
+
 // switch one skill on or off for one stage of one recipe -> the new `mine`
 export function toggle(shipped, mine, recipe, stage, skill, on) {
   const cur = skillsFor(shipped, mine, recipe, stage).skills;

@@ -110,5 +110,6 @@ export function savedRecipe({ id, name, about, from, base, stages }) {
   if (base?.card) { const { icon, bring, start } = base.card; out.card = { icon, bring, start }; }
   if (base?.needs) out.needs = base.needs;
   if (!out.format) delete out.format;
+  if (Array.isArray(base?.formats)) out.formats = base.formats; // a recipe that can be a long video or a Short stays so
   return out;
 }

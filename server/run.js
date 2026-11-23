@@ -16,6 +16,8 @@ import { createLive, outState, withBack } from './run-live.js';
 import { ITEMS_FILE } from './review-items.js';
 import { createExtras } from './run-extra.js';
 import { createOutWatch } from './out-watch.js';
+import { skillRecipe } from '../web/shell/format.js';
+import { createFormat } from './project-format.js';
 import { addedRules, rulesNotice } from './context/rules-diff.js';
 
 const readText = (f) => { try { return fs.readFileSync(f, 'utf8'); } catch { return ''; } };
@@ -40,7 +42,7 @@ export function createRunner(ctx) {
   function load(id) {
     const p = P().get(id);
     if (!p) throw Object.assign(new Error('no such project'), { status: 404 });
-    const r = craft.recipe(p.recipe);
+    const r = P().recipeOf(p);
     if (!r) throw Object.assign(new Error(`the recipe "${p.recipe}" is missing`), { status: 400 });
     return { p, r, dir: P().dir(id) };
   }
@@ -64,7 +66,7 @@ export function createRunner(ctx) {
   function promptFor(p, r, st, dir) {
     const i = St.indexOf(r, st.id);
     const kinds = craft.kinds();
-    const { skills, missing } = craft.skillsFor(r.id, st.id, p.skillSet);
+    const { skills, missing } = craft.skillsFor(skillRecipe(r), st.id, p.skillSet, r.id);
     const note = p.stages?.[st.id]?.note || '';
     const prev = r.stages[i - 1];
     const prevNote = prev ? p.stages?.[prev.id]?.note || '' : '';
@@ -185,6 +187,7 @@ export function createRunner(ctx) {
   }
 
   async function afterTurn(id, st, res, started) {
+    if (!res.error && !res.stopped) { try { (ctx.format ||= createFormat(ctx)).adopt(id); } catch (e) { ctx.log?.('format', e.message); } } // the ask stage states the format in .presence/format
     const { r, dir } = load(id);
     if (rulesAtStart.has(id)) { const note = rulesNotice(addedRules(rulesAtStart.get(id), readText(rulesFile()))); rulesAtStart.delete(id); if (note) toast(note, 'info', id); }
     // the turn's cost and time count even when a lock halts it

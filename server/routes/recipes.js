@@ -21,7 +21,7 @@ export function cardOf(r, { stats, mine, usedBy, root }) {
   const who = whoDoes(r);
   const c = r.card || {};
   return {
-    id: r.id, name: r.name, about: r.about || '', format: r.format || '', mine, from: r.from || null, usedBy,
+    id: r.id, name: r.name, about: r.about || '', format: r.format || '', formats: Array.isArray(r.formats) ? r.formats : undefined, mine, from: r.from || null, usedBy,
     icon: c.icon || ICON[r.format] || 'film',
     stages: r.stages.map((s) => ({ id: s.id, title: s.title || s.id, kind: s.kind, who: isAgent(s.kind) ? 'agent' : 'you', heavy: !!s.heavy, lock: !!(s.lock && s.lock.length), ...(s.custom ? { custom: true, focus: s.focus || '', out: s.out || [] } : {}) })),
     // the lines of the card: hand-written for a shipped recipe, else the stage titles of the changed list

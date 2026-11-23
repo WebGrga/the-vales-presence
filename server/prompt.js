@@ -2,6 +2,8 @@
 // (agent.js); everything about one stage goes in its message: the kind's instruction, the recipe's focus, where things
 // are, the files it must leave, the skills switched on for it, the house rules, the brief, your notes, the locks.
 
+import { canChoose } from '../web/shell/format.js';
+
 const section = (title, body) => (String(body || '').trim() ? `## ${title}\n\n${String(body).trim()}\n` : '');
 
 // a: { recipe, stage, index, kind: { title, instruction }, projectDir, root, skills: [{name, file, about}], missing,
@@ -12,6 +14,8 @@ export function stagePrompt(a) {
   const out = [];
   out.push(`# Stage ${a.index + 1} of ${n}: ${stage.title || stage.id} (${stage.kind})`);
   out.push(`Recipe: ${recipe.name}${recipe.about ? ` (${recipe.about})` : ''}. The stages: ${recipe.stages.map((s) => (s.id === stage.id ? `[${s.id}]` : s.id)).join(' > ')}.\n`);
+  if (canChoose(recipe)) out.push(`Format of this project: ${recipe.format === 'short' ? 'a YouTube Short, vertical 9:16, 1080x1920, about 60 seconds, with captions in the Shorts style' : 'a long video, horizontal 16:9, 1920x1080, no captions (captions are only for Shorts)'}.
+`);
   out.push(section('What this kind of stage does', a.kind?.instruction));
   out.push(section('This stage', stage.focus));
   if (a.sentBack) out.push(section('Sent back to you', `The user sent this stage back. Do what these notes say, and change nothing they do not name:\n\n${a.sentBack}`));

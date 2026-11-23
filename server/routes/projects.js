@@ -5,6 +5,7 @@ import { view as stageView } from '../stages.js';
 import { receive } from '../upload.js';
 import { writeJsonAtomic } from '../projects.js';
 import { listFootage } from '../footage.js';
+import { createFormat } from '../project-format.js';
 
 const ID = '([a-z0-9][a-z0-9_-]{0,79})';
 const P = (tail = '') => new RegExp(`^/api/projects/${ID}${tail}$`, 'i');
@@ -27,12 +28,12 @@ export default [
   } },
   { method: 'POST', path: '/api/projects', handler: async (req, res, ctx) => {
     const b = await ctx.readJson(req);
-    ctx.send(res, 200, need(ctx, 'projects').create({ title: b.title, recipe: b.recipe, id: b.id, topic: b.topic }));
+    ctx.send(res, 200, need(ctx, 'projects').create({ title: b.title, recipe: b.recipe, id: b.id, topic: b.topic, format: b.format }));
   } },
   // project.json, plus recipeDef (the recipe's stages) and view (the stage bar) for the screen
   { method: 'GET', path: P(), handler: async (req, res, ctx) => {
     const p = project(ctx, ctx.params[0]), r = ctx.projects.recipeOf(p);
-    ctx.send(res, 200, { ...p, recipeDef: r ? { id: r.id, name: r.name, about: r.about || '', format: r.format, stages: r.stages } : null, view: viewOf(ctx, p, r) });
+    ctx.send(res, 200, { ...p, recipeDef: r ? { id: r.id, name: r.name, about: r.about || '', format: r.format, formats: r.formats, stages: r.stages } : null, view: viewOf(ctx, p, r) });
   } },
   { method: 'GET', path: P('/view'), handler: async (req, res, ctx) => {
     const p = project(ctx, ctx.params[0]), r = ctx.projects.recipeOf(p);
@@ -50,6 +51,13 @@ export default [
     ctx.broadcast({ type: 'toast', project: id, text: `Footage in: ${got.files.map((f) => f.name).join(', ')}`, kind: 'ok' });
     ctx.send(res, 200, { files: got.files, footage: footageList(ctx.projectDir(id)) });
   } },
+  // the project's format ("long" | "short"): refused when the recipe has only one or the rough is locked
+  ...['POST', 'PATCH'].map((method) => ({ method, path: P('/format'), handler: async (req, res, ctx) => {
+    const id = ctx.params[0]; project(ctx, id);
+    const b = await ctx.readJson(req);
+    const r = (ctx.format ||= createFormat(ctx)).set(id, b.format);
+    ctx.send(res, r.error ? r.status || 409 : 200, r);
+  } })),
   { method: 'POST', path: P('/go'), handler: async (req, res, ctx) => reply(ctx, res, await need(ctx, 'runner').go(ctx.params[0])) },
   { method: 'POST', path: P('/approve'), handler: async (req, res, ctx) => { const b = await ctx.readJson(req); reply(ctx, res, await need(ctx, 'runner').approve(ctx.params[0], { notes: b.notes })); } },
   { method: 'POST', path: P('/sendback'), handler: async (req, res, ctx) => { const b = await ctx.readJson(req); reply(ctx, res, await need(ctx, 'runner').sendback(ctx.params[0], { notes: b.notes })); } },

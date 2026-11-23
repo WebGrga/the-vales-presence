@@ -11,6 +11,7 @@ import { editRecipe } from './home-recipe-edit.js';
 import { footagePicker, uploadFootage } from './new-footage.js';
 import { startFor } from './recipe-tabs.js';
 import { ask } from './home-dialog.js';
+import { canChoose, formatsOf, LABEL } from './format.js';
 
 const LS_RECIPE = 'presence.home.recipe';
 const tabName = (id) => ({ edit: 'Edit', shorts: 'Shorts', studio: 'Studio', context: 'Context', export: 'Export' }[id] || id);
@@ -23,6 +24,15 @@ export function newProjectForm({ app, recipes, projects, onOpen, onCreated, onRe
   const name = bindDraft(h('input', { type: 'text', placeholder: 'What is the project called?', maxlength: 120, 'aria-label': 'New project title' }), draft);
   const topic = bindDraft(h('textarea', { rows: 2, maxlength: 2000, 'aria-label': 'What the video is about' }), topicDraft);
   const topicBox = h('label.home-topic', h('span.home-topic-l', 'What is the video about?'), topic, h('span.dim.home-topic-h'));
+  // Long video (16:9) or Short (9:16), for a recipe that can be either (the agent may also set it when it asks)
+  let format = (() => { try { return localStorage.getItem('presence.home.format'); } catch { return null; } })() || 'long';
+  const fmtBtns = {};
+  const setFormat = (f) => { format = f; try { localStorage.setItem('presence.home.format', f); } catch {} for (const [k, b] of Object.entries(fmtBtns)) { b.setAttribute('aria-checked', String(k === f)); b.classList.toggle('on', k === f); } };
+  const formatBox = h('div.home-format', { role: 'radiogroup', 'aria-label': 'Format', hidden: true },
+    h('span.home-topic-l', 'Format'),
+    h('div.home-format-row', ...['long', 'short'].map((f) => (fmtBtns[f] = h('button.home-format-b', { type: 'button', role: 'radio', 'aria-checked': 'false', on: { click: () => { setFormat(f); paintExtras(); } } },
+      h('b', f === 'long' ? 'Long video' : 'Short'), h('small', f === 'long' ? '16:9, horizontal' : '9:16, vertical, about 60 s'))))),
+    h('span.dim.home-topic-h', 'The agent asks about it in the Brief too, and can set it for you.'));
   const feet = footagePicker();
   let chosen = (() => { try { return localStorage.getItem(LS_RECIPE); } catch { return null; } })();
   if (!list.some((r) => r.id === chosen)) chosen = list[0]?.id;
@@ -42,6 +52,8 @@ export function newProjectForm({ app, recipes, projects, onOpen, onCreated, onRe
   function paintExtras() {
     const r = recipe();
     topicBox.hidden = !r?.topic;
+    formatBox.hidden = !(r && canChoose(r));
+    if (r && canChoose(r)) setFormat(formatsOf(r).includes(format) ? format : formatsOf(r)[0]);
     if (r?.topic) {
       topicBox.querySelector('.home-topic-l').textContent = r.topic.label || 'What is the video about?';
       topicBox.querySelector('.home-topic-h').textContent = r.topic.hint || '';
@@ -92,7 +104,7 @@ export function newProjectForm({ app, recipes, projects, onOpen, onCreated, onRe
     say(); make.disabled = true;
     const r = recipe(), tp = r.topic ? topic.value.trim() : '', items = [...feet.items()];
     try {
-      const p = await app.api('/api/projects', { title: t, recipe: r.id, topic: tp || undefined });
+      const p = await app.api('/api/projects', { title: t, recipe: r.id, topic: tp || undefined, format: canChoose(r) ? format : undefined });
       const id = p?.id || p?.project?.id;
       draft.clear(); name.value = ''; topicDraft.clear(); topic.value = ''; feet.clear();
       if (id && items.length) uploadFootage(app, id, t, items);
@@ -108,7 +120,7 @@ export function newProjectForm({ app, recipes, projects, onOpen, onCreated, onRe
 
   // the default recipe from Settings (when one is set, the box starts on it)
   app.api('/api/agent/settings').then((d) => { const id = d?.settings?.defaultRecipe; if (id && id !== chosen && list.some((x) => x.id === id)) { chosen = id; cards.set(id); paintExtras(); } }).catch(() => {});
-  const el = h('div.home-new', h('div.home-new-row', name), cards.el, topicBox, feet.el, h('div.home-new-go', make, where), note);
+  const el = h('div.home-new', h('div.home-new-row', name), cards.el, formatBox, topicBox, feet.el, h('div.home-new-go', make, where), note);
   paintExtras();
   return {
     el, focus: () => name.focus(),

@@ -5,6 +5,7 @@ import path from 'node:path';
 import { initStages, normalize } from './stages.js';
 import { createCraft } from './craft.js';
 import { topicText, TOPIC_FILE } from './project-brief.js';
+import { recipeFor, formatsOf, isFormat } from '../web/shell/format.js';
 
 export const FOLDERS = ['video/footage', 'video/out', 'studio', '.presence'];
 
@@ -21,9 +22,10 @@ export function uniqueId(base, taken) {
   for (let n = 2; ; n++) if (!t.has(`${base}-${n}`)) return `${base}-${n}`;
 }
 // pure: a new project.json
-export function newProject({ id, title, recipe, now = Date.now() }) {
+export function newProject({ id, title, recipe, format, now = Date.now() }) {
   const { at, stages } = initStages(recipe);
-  return { id, title: String(title || id).slice(0, 200), recipe: recipe.id, created: new Date(now).toISOString(), at, stages };
+  const own = isFormat(format) && formatsOf(recipe).length > 1 && formatsOf(recipe).includes(format) ? { format } : {}; // only a recipe that can be either keeps one on the project
+  return { ...own, id, title: String(title || id).slice(0, 200), recipe: recipe.id, created: new Date(now).toISOString(), at, stages };
 }
 
 // write a file atomically (a temp file renamed over it; Windows may refuse a rename while a reader has it open: retried)
@@ -77,7 +79,7 @@ export function createProjects(ctx) {
     const next = fn(p) || p;
     return save(next);
   }
-  function create({ title, recipe, id, topic } = {}) {
+  function create({ title, recipe, id, topic, format } = {}) {
     const r = craft.recipe(String(recipe || ''));
     if (!r) throw Object.assign(new Error(`no recipe "${recipe}"`), { status: 400 });
     if (!String(title || '').trim()) throw Object.assign(new Error('a project needs a title'), { status: 400 });
@@ -88,7 +90,7 @@ export function createProjects(ctx) {
     for (const f of FOLDERS) fs.mkdirSync(path.join(d, ...f.split('/')), { recursive: true });
     const idea = topicText(topic);
     if (idea) fs.writeFileSync(path.join(d, ...TOPIC_FILE), idea);
-    return save(newProject({ id: pid, title: String(title).trim(), recipe: r }));
+    return save(newProject({ id: pid, title: String(title).trim(), recipe: r, format }));
   }
   // one line in .presence/log.jsonl
   function log(id, entry) {
@@ -102,7 +104,8 @@ export function createProjects(ctx) {
     try { return fs.readFileSync(path.join(dir(id), '.presence', 'log.jsonl'), 'utf8').split('\n').filter(Boolean).slice(-max).map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean); } catch { return []; }
   }
   const exists = (id) => { try { return fs.existsSync(fileOf(id)); } catch { return false; } };
-  const recipeOf = (p) => craft.recipe(p?.recipe);
+  // the recipe as this project is: its format (the project's own wins) and the stages' words for that format
+  const recipeOf = (p) => { const r = craft.recipe(p?.recipe); return r ? recipeFor(r, p) : r; };
 
   return { dir, get, list, save, update, create, log, readLog, exists, recipeOf, recipes: () => craft.recipes(), recipe: (id) => craft.recipe(id), craft };
 }

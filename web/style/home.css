@@ -165,3 +165,10 @@ button.home-pin.on, button.home-pin.on:hover:not(:disabled) { box-shadow: none; 
 .tab.wants { color: var(--orange); }
 .home-newhead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; } .home-newhead h3 { margin: 0; } .home-new[hidden] { display: none; }
 .nf-path { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; } .nf-path[hidden] { display: none; } .nf-path input { flex: 1 1 260px; min-width: 0; } .nf-err { color: var(--lred); font-size: 12px; }
+
+.home-format { display: flex; flex-direction: column; gap: 6px; }
+.home-format[hidden] { display: none; }
+.home-format-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.home-format-b { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 14px; text-align: left; cursor: pointer; border: 1px solid var(--line, #444); background: transparent; color: inherit; border-radius: 6px; min-width: 160px; }
+.home-format-b small { opacity: .7; }
+.home-format-b.on { border-color: var(--tan, #c9a56b); box-shadow: inset 0 0 0 1px var(--tan, #c9a56b); }

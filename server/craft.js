@@ -4,7 +4,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { createSets } from './context/sets.js';
-import { skillsFor as pickFor } from './context/stage-skills.js';
+import { skillsForFormat as pickFor } from './context/stage-skills.js';
 
 const readJson = (f, d) => { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch { return d; } };
 const readText = (f) => { try { return fs.readFileSync(f, 'utf8'); } catch { return null; } };
@@ -59,8 +59,8 @@ export function createCraft({ root, dataDir }) {
   }
 
   // the skills a stage reads: [{ name, file, about }] (a name with no SKILL.md is left out, with missing listed)
-  function skillsFor(recipeId, stageId, setId) {
-    const names = pickFor(sets.shippedLists(), sets.read(sets.resolve(setId))?.lists || {}, recipeId, stageId).skills.filter((n) => NAME.test(n));
+  function skillsFor(recipeId, stageId, setId, baseId) {
+    const names = pickFor(sets.shippedLists(), sets.read(sets.resolve(setId))?.lists || {}, recipeId, stageId, baseId).skills.filter((n) => NAME.test(n));
     const skills = [], missing = [];
     for (const name of names) {
       const file = skillFile(name);

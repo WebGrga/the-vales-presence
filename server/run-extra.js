@@ -2,6 +2,7 @@
 // stage's end or a limit sends to every window, the day's and month's spend limits, "Stop after this stage", the queue
 // across projects, and what Go will do before it does it. Decisions are pure elsewhere (spend.js, queue-view.js, stages.js).
 import * as St from './stages.js';
+import { skillRecipe } from '../web/shell/format.js';
 import { stageStats } from './recipe-card.js';
 import { summarise, over, warnText } from './spend.js';
 
@@ -71,7 +72,7 @@ export function createExtras(ctx, { P, load, L, craft, queue, stopAfter, warned,
     const { p, r } = load(id);
     const st = St.current(p, r);
     if (!st || p.done || !St.isAgent(st.kind)) return null;
-    const { skills, missing } = craft.skillsFor(r.id, st.id, p.skillSet);
+    const { skills, missing } = craft.skillsFor(skillRecipe(r), st.id, p.skillSet, r.id);
     const stats = stageStats(P().list());
     const m = stats[`${r.id}/${st.id}`] || stats[st.id] || null;
     return { stage: st.id, title: st.title || st.id, skills: skills.length, names: skills.map((x) => x.name || x), missing: missing || [], heavy: !!st.heavy, usualMs: m ? Math.round(m.ms) : null, usualCost: m ? m.cost : null, runs: m?.n || 0 };

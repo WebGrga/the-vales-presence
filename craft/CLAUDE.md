@@ -13,6 +13,10 @@ Your working folder is the project folder:
 
 `$ENGINE` below means the app's `engine/` folder, in the repo root your stage prompt names (also in the `PRESENCE_ROOT` environment variable: in Bash, `ENGINE="$PRESENCE_ROOT/engine"`). The engine finds the workshop from `PRESENCE_VIDEO`, which is set for you, or from `--video <project>/video`. Paths in the commands below are relative to `video/`: run them from there. `$ENGINE/README.md` is the full manual; read the part you need before you use a command for the first time in a session.
 
+## Format: long video or Short
+
+A project is a long video (16:9, 1920x1080) or a Short (9:16, 1080x1920, about 60 s). The stage prompt says which ("Format of this project"), and its stage lines follow it: for a Short use `Events.for_cut(cut, "short")`, the Shorts captions and safe zone and the Shorts kits; for a long video use `'long'` and never captions (captions are only for Shorts). In "A video from the idea" the user may not have said which: at the Brief stage, once you know, write one line into `.presence/format` (the only thing you write there): `format: short` or `format: long`. The app reads it when your stage ends and lays the project out for it; it is refused once the rough is locked.
+
 ## The engine, in one screen
 
 ```
