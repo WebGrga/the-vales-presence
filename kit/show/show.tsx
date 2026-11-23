@@ -42,10 +42,31 @@ const fadeOut = (t: number, end: number, d = 0.3) => interpolate(t, [end - d, en
 const prog = (t: number, a: number, d: number) => interpolate(t, [a, a + d], [0, 1], { ...clamp, easing: ease });
 const life = (t: number, ev: Ev, d = 0.3) => Math.min(fadeIn(t, ev.at, d), fadeOut(t, ev.end, d));
 
+/** The real width of a text in the kit's font (measured on a canvas: the fonts are all in before the first frame). Boxes are sized from this, never from a guess,
+ *  so a label never runs out of its card. */
+let ctx2d: CanvasRenderingContext2D | null = null;
+const measure = (text: string, px: number, weight = 900, spacing = 0) => {
+  try {
+    ctx2d = ctx2d ?? document.createElement("canvas").getContext("2d");
+    if (!ctx2d) throw new Error("no canvas");
+    ctx2d.font = `${weight} ${px}px ${SANS}`;
+    return ctx2d.measureText(text).width + spacing * text.length;
+  } catch {
+    return text.length * px * 0.72 + spacing * text.length;
+  }
+};
+/** A free box inside an empty part of the frame (`area`, optional) or, without one, at the top centre of a wide frame / the top of a vertical one. */
+const slot = (w: number, h: number, W: number, H: number, area?: Rect, x?: number, y?: number): Rect => {
+  const a = area ?? { x: 0, y: 0, w: W, h: H };
+  const ax = x ?? Math.max(30, Math.min(W - 30 - w, a.x + (a.w - w) / 2));
+  const ay = y ?? (area ? Math.max(30, a.y + (a.h - h) / 2) : 70);
+  return { x: ax, y: ay, w, h };
+};
+
 const hits = (a: Rect, b: Rect) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 const inside = (r: Rect, W: number, H: number) => r.x >= 0 && r.y >= 0 && r.x + r.w <= W && r.y + r.h <= H;
 /** Move a box off a rectangle that must stay clear: the nearest free side of it that still fits in the frame. */
-const dodge = (b: Rect, a: Rect | undefined, W: number, H: number, pad = 28): Rect => {
+const dodge = (b: Rect, a: Rect | undefined, W: number, H: number, pad = 48): Rect => {
   if (!a || !hits(b, a)) return b;
   const c = [{ ...b, y: a.y - b.h - pad }, { ...b, y: a.y + a.h + pad }, { ...b, x: a.x - b.w - pad }, { ...b, x: a.x + a.w + pad }].filter((r) => inside(r, W, H));
   if (!c.length) return b;
@@ -76,7 +97,7 @@ const Callout: React.FC<{ ev: Ev }> = ({ ev }) => {
   const box = p.w && p.h;
   const tb: Rect = box ? { x: p.x, y: p.y, w: p.w!, h: p.h! } : { x: p.x - 38, y: p.y - 38, w: 76, h: 76 };
   const cx = tb.x + tb.w / 2, cy = tb.y + tb.h / 2;
-  const lw = Math.min(W - 80, text.length * size * 0.55 + 70), lh = size * 1.2 + 34, g = 130 * s;
+  const lw = Math.min(W - 80, measure(text, size) + 12 + 22 + 30 + 8), lh = size * 1.2 + 34, g = 130 * s;
   const place = (side: Side) => {
     let L: Rect, a: [number, number], e: [number, number];
     if (side === "top" || side === "bottom") {
@@ -96,9 +117,11 @@ const Callout: React.FC<{ ev: Ev }> = ({ ev }) => {
   const first: Side = p.side ?? (tb.y > 300 ? "top" : "bottom");
   const opp: Record<Side, Side> = { top: "bottom", bottom: "top", left: "right", right: "left" };
   const order: Side[] = [first, opp[first], "right", "left", "top", "bottom"];
-  const ok = (o: ReturnType<typeof place>) => inside(o.L, W, H) && !(p.avoid && hits(o.L, p.avoid));
+  const M = 30; // a label keeps this far from the frame edge
+  const ok = (o: ReturnType<typeof place>) => inside(o.L, W, H) && o.L.x >= M && o.L.y >= M && o.L.x + o.L.w <= W - M && o.L.y + o.L.h <= H - M && !(p.avoid && hits(o.L, p.avoid));
   const lay = order.map(place).find(ok) ?? place(first);
-  const { L, a, e } = lay;
+  const { a, e } = lay;
+  const L: Rect = { ...lay.L, x: Math.max(M, Math.min(W - M - lay.L.w, lay.L.x)), y: Math.max(M, Math.min(H - M - lay.L.h, lay.L.y)) };
   // a gentle bow in the arrow
   const mx = (a[0] + e[0]) / 2, my = (a[1] + e[1]) / 2, dx = e[0] - a[0], dy = e[1] - a[1], len = Math.hypot(dx, dy) || 1;
   const bow = 0.16 * len;
@@ -132,7 +155,7 @@ const Callout: React.FC<{ ev: Ev }> = ({ ev }) => {
 // ------------------------------------------------------------------------------------------------------------------------------ Spotlight
 
 /** Dims everything except a box; the box edge glows softly. For "look here" on a busy screen. The dim closes in on the box in 0.5 s, then holds.
- *  props: {x, y, w, h, text? (a card under the box, above it when there is no room), dim? (0.72), radius? (18), avoid?: {x,y,w,h}} */
+ *  props: {x, y, w, h, text? (a card under the box, above it when there is no room), dim? (0.72), radius? (18), avoid?: {x,y,w,h} (never dimmed)} */
 const Spotlight: React.FC<{ ev: Ev }> = ({ ev }) => {
   const { t, f, fps, W, H, s } = useBox();
   const p = ev.props as { x: number; y: number; w: number; h: number; text?: string; dim?: number; radius?: number; avoid?: Rect };
@@ -141,7 +164,7 @@ const Spotlight: React.FC<{ ev: Ev }> = ({ ev }) => {
   const o = life(t, ev, 0.35);
   const grow = (1 - e) * 110, x = p.x - grow, y = p.y - grow, w = p.w + 2 * grow, h = p.h + 2 * grow;
   const id = `spot-${ev.id}`;
-  const size = 40 * s, lw = text ? Math.min(W - 80, text.length * size * 0.55 + 70) : 0, lh = size * 1.2 + 34;
+  const size = 40 * s, lw = text ? Math.min(W - 80, measure(text, size) + 12 + 22 + 30 + 8) : 0, lh = size * 1.2 + 34;
   const below = p.y + p.h + 36 + lh < H - 20;
   let L: Rect = { x: Math.max(40, Math.min(W - 40 - lw, p.x + p.w / 2 - lw / 2)), y: below ? p.y + p.h + 36 : p.y - 36 - lh, w: lw, h: lh };
   L = dodge(L, p.avoid, W, H);
@@ -154,6 +177,7 @@ const Spotlight: React.FC<{ ev: Ev }> = ({ ev }) => {
           <mask id={id}>
             <rect width={W} height={H} fill="white" />
             <rect x={x} y={y} width={w} height={h} rx={radius} fill="black" filter={`url(#${id}-b)`} />
+            {p.avoid ? <rect x={p.avoid.x} y={p.avoid.y} width={p.avoid.w} height={p.avoid.h} rx={14} fill="black" filter={`url(#${id}-b)`} /> : null}
           </mask>
         </defs>
         <rect width={W} height={H} fill={`rgba(6,8,12,${dim})`} mask={`url(#${id})`} />
@@ -200,65 +224,78 @@ const Inset: React.FC<{ ev: Ev }> = ({ ev }) => {
 
 // ------------------------------------------------------------------------------------------------------------------------------ Flow
 
-/** A diagram of boxes and arrows that builds up as it is said: each node pops in at its time, each arrow draws on at its time, the newest node is lit.
+/** A diagram of boxes and arrows that builds up as it is said: a small paper card appears WITH its first node and grows as each next node pops in
+ *  (nothing is drawn before the first node, whatever `ev.at` is), each arrow draws on at its time, the newest node is lit. The card is as big as what it shows.
  *  props: {nodes: [{id, text, at}], edges?: [{from, to, at?, label?}] (default: each node to the next, at the next node's time; a "cycle" also closes),
- *          layout?: "row"|"column"|"cycle" (row in a wide frame, column in a vertical one), title?, x?, y?, w? (the panel's top-left and width),
- *          avoid?: {x,y,w,h}}
+ *          layout?: "row"|"column"|"cycle" (row in a wide frame, column in a vertical one), title?, x?, y? (the card's top-left; default the top centre),
+ *          area?: {x,y,w,h} (an empty part of the frame: the card is centred in it), avoid?: {x,y,w,h}}
  *  `at` is in seconds of the rough. */
 type FNode = { id: string; text: string; at: number };
 type FEdge = { from: string; to: string; at?: number; label?: string };
 const Flow: React.FC<{ ev: Ev }> = ({ ev }) => {
   const { t, f, fps, W, H, s } = useBox();
-  const p = ev.props as { nodes: FNode[]; edges?: FEdge[]; layout?: "row" | "column" | "cycle"; title?: string; x?: number; y?: number; w?: number; avoid?: Rect };
+  const p = ev.props as { nodes: FNode[]; edges?: FEdge[]; layout?: "row" | "column" | "cycle"; title?: string; x?: number; y?: number; area?: Rect; avoid?: Rect };
   const nodes = p.nodes, n = nodes.length;
   const layout = p.layout ?? (W >= H ? "row" : "column");
-  const pad = 44, head = p.title ? 84 * s : 0;
-  const pw = Math.min(p.w ?? (layout === "cycle" ? 1100 : layout === "row" ? 1700 : 760), W - 100);
-  let ph: number, nw: number, nh: number;
+  const BAR = 12, pad = 34 * s, head = p.title ? 62 * s : 0, fs = (layout === "row" ? 30 : 34) * s;
+  const first = Math.min(...nodes.map((d) => d.at)) - 0.1;
+  const longestText = nodes.reduce((a, d) => (measure(d.text, fs) > measure(a, fs) ? d.text : a), "");
+  const longest = measure(longestText, fs);
+  const hasLabels = !!p.edges?.some((d) => d.label);
   const pos: Record<string, Rect> = {};
+  let cw: number, ch: number, nw: number, nh: number, step = 0;
+  const sorted = [...nodes].sort((a, b) => a.at - b.at);
+  const rank = Object.fromEntries(sorted.map((d, i) => [d.id, i]));
   if (layout === "row") {
-    const gap = Math.max(p.edges?.some((d) => d.label) ? 150 : 70, Math.min(110, ((pw - 2 * pad) / n) * 0.34));
-    nw = Math.min(330, (pw - 2 * pad - (n - 1) * gap) / n); nh = 150 * s; ph = nh + 2 * pad + head;
-    const used = n * nw + (n - 1) * gap; // centre the row
-    nodes.forEach((d, i) => (pos[d.id] = { x: pad + (pw - 2 * pad - used) / 2 + i * (nw + gap), y: head + pad, w: nw, h: nh }));
+    const gap = hasLabels ? 130 : 62;
+    nw = Math.min(Math.max(190, longest + 48 * s), 300, (W - 140 - BAR - 2 * pad - (n - 1) * gap) / n);
+    nh = (longest + 48 * s > nw ? 128 : 92) * s;
+    step = nw + gap; cw = n * nw + (n - 1) * gap; ch = nh;
+    nodes.forEach((d, i) => (pos[d.id] = { x: i * step, y: 0, w: nw, h: nh }));
   } else if (layout === "column") {
-    nh = 100 * s; nw = Math.min(pw - 2 * pad, 640);
-    const gap = Math.max(34, Math.min(80, (H - 200 - head - 2 * pad - n * nh) / Math.max(1, n - 1)));
-    ph = n * nh + (n - 1) * gap + 2 * pad + head;
-    nodes.forEach((d, i) => (pos[d.id] = { x: (pw - nw) / 2, y: head + pad + i * (nh + gap), w: nw, h: nh }));
+    nw = Math.min(Math.max(300, longest + 56 * s), W - 140 - BAR - 2 * pad); nh = 84 * s;
+    const gap = 40 * s; step = nh + gap; cw = nw; ch = n * nh + (n - 1) * gap;
+    nodes.forEach((d, i) => (pos[d.id] = { x: 0, y: i * step, w: nw, h: nh }));
   } else {
-    nw = 290 * s; nh = 104 * s; ph = Math.min(H - 160, pw * 0.72) + head;
-    const rx = (pw - nw) / 2 - pad, ry = (ph - head - nh) / 2 - pad;
+    nw = Math.min(Math.max(210, longest + 48 * s), 290) * s; nh = 88 * s;
+    const R = Math.max(nw * 0.95, n * 52), rx = R * 1.25, ry = R;
+    cw = 2 * rx + nw; ch = 2 * ry + nh;
     nodes.forEach((d, i) => {
       const a = -Math.PI / 2 + (2 * Math.PI * i) / n;
-      pos[d.id] = { x: pw / 2 + rx * Math.cos(a) - nw / 2, y: head + (ph - head) / 2 + ry * Math.sin(a) - nh / 2, w: nw, h: nh };
+      pos[d.id] = { x: rx + rx * Math.cos(a), y: ry + ry * Math.sin(a), w: nw, h: nh };
     });
   }
+  const titleW = p.title ? measure(p.title.toUpperCase(), 26 * s, 800, 3) : 0; // the card is never narrower than its title
+  const fw = Math.max(cw, titleW) + 2 * pad + BAR, fh = ch + 2 * pad + head;
   const edges: FEdge[] = p.edges ?? nodes.slice(1).map((d, i) => ({ from: nodes[i].id, to: d.id })).concat(layout === "cycle" && n > 2 ? [{ from: nodes[n - 1].id, to: nodes[0].id }] : []);
-  const base: Rect = { x: p.x ?? (W - pw) / 2, y: p.y ?? (H - ph) / 2, w: pw, h: ph };
-  const R = dodge(base, p.avoid, W, H);
-  const o = life(t, ev, 0.35);
-  const sorted = [...nodes].sort((a, b) => a.at - b.at);
+  const R = dodge(slot(fw, fh, W, H, p.area, p.x, p.y), p.avoid, W, H);
+  // the card grows with the nodes that have come (a row to the right, a column downward); a cycle is as big as its ring from the start
+  const shown = nodes.reduce((a, d) => a + prog(t, d.at - 0.05, 0.45), 0);
+  const grow = (full: number, per: number, one: number) => (layout === "cycle" ? full : shown >= 1 ? one + (shown - 1) * per : shown * one);
+  const curW = layout === "row" ? 2 * pad + BAR + Math.max(titleW, grow(cw, step, nw)) : fw, curH = layout === "column" ? 2 * pad + head + grow(ch, step, nh) : fh;
+  const o = Math.min(fadeIn(t, first, 0.3), fadeOut(t, ev.end, 0.3));
+  const enter = easeOut(interpolate(t, [first, first + 0.4], [0, 1], clamp));
   const byId = Object.fromEntries(nodes.map((d) => [d.id, d]));
-  const enter = easeOut(interpolate(t, [ev.at, ev.at + 0.4], [0, 1], clamp));
   const edgeAt = (d: FEdge) => d.at ?? byId[d.to]?.at ?? ev.at;
+  if (t < first - 0.05) return null;
+  const ox = pad, oy = pad + head; // where the nodes' coordinates start inside the card (right of the bar)
   return (
-    <div style={{ position: "absolute", left: R.x, top: R.y, width: R.w, height: R.h, opacity: o, transform: `translateY(${(1 - enter) * 30}px)`, background: K.glass, borderRadius: 26, boxShadow: "0 26px 80px rgba(0,0,0,.5)", border: "1px solid rgba(255,255,255,.09)", fontFamily: SANS }}>
-      {p.title ? <div style={{ position: "absolute", left: pad, top: 26 * s, fontSize: 30 * s, fontWeight: 800, letterSpacing: 3, color: K.accent, textTransform: "uppercase" }}>{p.title}</div> : null}
-      <svg width={R.w} height={R.h} style={{ position: "absolute", left: 0, top: 0 }}>
+    <Card r={{ x: R.x, y: R.y, w: curW, h: curH }} style={{ opacity: o, transform: `translateY(${(1 - enter) * -24}px)` }}>
+      {p.title ? <div style={{ position: "absolute", left: pad, top: 24 * s, fontSize: 26 * s, fontWeight: 800, letterSpacing: 3, color: K.accent, textTransform: "uppercase", whiteSpace: "nowrap" }}>{p.title}</div> : null}
+      <svg width={fw} height={fh} style={{ position: "absolute", left: 0, top: 0, overflow: "visible" }}>
         {edges.map((d, i) => {
           const A = pos[d.from], B = pos[d.to];
           if (!A || !B) return null;
-          const ca = [A.x + A.w / 2, A.y + A.h / 2], cb = [B.x + B.w / 2, B.y + B.h / 2];
+          const ca = [ox + A.x + A.w / 2, oy + A.y + A.h / 2], cb = [ox + B.x + B.w / 2, oy + B.y + B.h / 2];
           const dx = cb[0] - ca[0], dy = cb[1] - ca[1], len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
           const reach = (Z: Rect, gap: number) => Math.min(Math.abs(ux) > 1e-6 ? Z.w / 2 / Math.abs(ux) : 1e9, Math.abs(uy) > 1e-6 ? Z.h / 2 / Math.abs(uy) : 1e9) + gap;
-          const a = [ca[0] + ux * reach(A, 12), ca[1] + uy * reach(A, 12)], e = [cb[0] - ux * reach(B, 14), cb[1] - uy * reach(B, 14)];
+          const a = [ca[0] + ux * reach(A, 10), ca[1] + uy * reach(A, 10)], e = [cb[0] - ux * reach(B, 12), cb[1] - uy * reach(B, 12)];
           const at = edgeAt(d), v = prog(t, at, 0.4), hd = prog(t, at + 0.3, 0.12), th = Math.atan2(uy, ux);
-          const hx = (da: number) => `${e[0] - 22 * Math.cos(th + da)},${e[1] - 22 * Math.sin(th + da)}`;
+          const hx = (da: number) => `${e[0] - 18 * Math.cos(th + da)},${e[1] - 18 * Math.sin(th + da)}`;
           return (
             <g key={i}>
-              <line x1={a[0]} y1={a[1]} x2={e[0]} y2={e[1]} stroke={K.accent} strokeWidth={6} strokeLinecap="round" pathLength={1} strokeDasharray={1} strokeDashoffset={1 - v} />
-              <polyline points={`${hx(-0.5)} ${e[0]},${e[1]} ${hx(0.5)}`} fill="none" stroke={K.accent} strokeWidth={6} strokeLinecap="round" strokeLinejoin="round" opacity={hd} />
+              <line x1={a[0]} y1={a[1]} x2={e[0]} y2={e[1]} stroke={K.accent} strokeWidth={5} strokeLinecap="round" pathLength={1} strokeDasharray={1} strokeDashoffset={1 - v} />
+              <polyline points={`${hx(-0.5)} ${e[0]},${e[1]} ${hx(0.5)}`} fill="none" stroke={K.accent} strokeWidth={5} strokeLinecap="round" strokeLinejoin="round" opacity={hd} />
             </g>
           );
         })}
@@ -266,70 +303,75 @@ const Flow: React.FC<{ ev: Ev }> = ({ ev }) => {
       {edges.map((d, i) => {
         const A = pos[d.from], B = pos[d.to];
         if (!A || !B || !d.label) return null;
-        return <div key={i} style={{ position: "absolute", left: (A.x + A.w / 2 + B.x + B.w / 2) / 2, top: (A.y + A.h / 2 + B.y + B.h / 2) / 2, transform: "translate(-50%,-50%)", opacity: fadeIn(t, edgeAt(d) + 0.25, 0.25), background: K.ink, border: `2px solid ${K.accent}`, color: "white", borderRadius: 999, padding: "4px 16px", fontSize: 24 * s, fontWeight: 800, whiteSpace: "nowrap" }}>{d.label}</div>;
+        return <div key={i} style={{ position: "absolute", left: ox + (A.x + A.w / 2 + B.x + B.w / 2) / 2, top: oy + (A.y + A.h / 2 + B.y + B.h / 2) / 2, transform: "translate(-50%,-50%)", opacity: fadeIn(t, edgeAt(d) + 0.25, 0.25), background: K.paper, border: `2px solid ${K.accent}`, color: K.ink, borderRadius: 999, padding: "2px 14px", fontSize: 22 * s, fontWeight: 800, whiteSpace: "nowrap" }}>{d.label}</div>;
       })}
       {nodes.map((d) => {
-        const r = pos[d.id], k = pop(f, fps, d.at);
-        const next = sorted.find((x) => x.at > d.at)?.at;
+        const r = pos[d.id], k = pop(f, fps, d.at), i = rank[d.id];
+        const next = sorted[i + 1]?.at;
         // lit from its own arrival until the next node arrives, eased over 0.3 s
         const hot = fadeIn(t, d.at, 0.3) * (next === undefined ? 1 : 1 - prog(t, next, 0.3));
         return (
-          <div key={d.id} style={{ position: "absolute", left: r.x, top: r.y, width: r.w, height: r.h, opacity: Math.min(1, k * 1.6), transform: `scale(${0.7 + 0.3 * k})`, borderRadius: 18, boxSizing: "border-box", padding: "10px 16px", display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", fontWeight: 900, fontSize: (layout === "row" ? 32 : 42) * s, lineHeight: 1.12, background: hot > 0.5 ? K.accent : K.paper, color: hot > 0.5 ? "white" : K.ink, boxShadow: hot > 0.5 ? "0 0 0 4px rgba(79,140,255,.35), 0 10px 30px rgba(0,0,0,.4)" : "0 10px 30px rgba(0,0,0,.4)" }}>{d.text}</div>
+          <div key={d.id} style={{ position: "absolute", left: ox + r.x, top: oy + r.y, width: r.w, height: r.h, opacity: Math.min(1, k * 1.6), transform: `scale(${0.7 + 0.3 * k})`, borderRadius: 14, boxSizing: "border-box", padding: "8px 16px", display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", fontWeight: 900, fontSize: fs, lineHeight: 1.14, background: hot > 0.5 ? K.accent : "#eceff6", color: hot > 0.5 ? "white" : K.ink, boxShadow: hot > 0.5 ? "0 0 0 4px rgba(79,140,255,.28)" : "none" }}>{d.text}</div>
         );
       })}
-    </div>
+    </Card>
   );
 };
 
 // ------------------------------------------------------------------------------------------------------------------------------ Compare
 
-/** Two sides, before/after or A versus B, on a dimmed picture: the left card arrives with the event, the right one at `at2`.
+/** Two sides, before/after or A versus B, as two compact paper cards (the picture is not dimmed): the left arrives with the event, the right at `at2`.
  *  props: {left: {title, src?, lines?}, right: {title, src?, lines?}, at2? (seconds of the rough; default 40% into the event), vs? ("VS"; "" for none),
- *          colors? ["#ffb547", "#4f8cff"], avoid?: {x,y,w,h}}
+ *          colors? ["#ffb547", "#4f8cff"], w? (a card's width: 600 with pictures, else fits the text), x?, y? (the pair's top-left; default top centre),
+ *          area?: {x,y,w,h} (an empty part of the frame: the pair is centred in it), avoid?: {x,y,w,h}}
  *  src: an image in remotion/public; lines: short facts under it (3 at most read well). A wide frame puts the cards side by side, a vertical one stacks them. */
 type Side2 = { title: string; src?: string; lines?: string[] };
 const Compare: React.FC<{ ev: Ev }> = ({ ev }) => {
   const { t, f, fps, W, H, s } = useBox();
-  const p = ev.props as { left: Side2; right: Side2; at2?: number; vs?: string; colors?: [string, string]; avoid?: Rect };
+  const p = ev.props as { left: Side2; right: Side2; at2?: number; vs?: string; colors?: [string, string]; w?: number; x?: number; y?: number; area?: Rect; avoid?: Rect };
   const at2 = p.at2 ?? ev.at + (ev.end - ev.at) * 0.4;
   const cols = p.colors ?? [K.warm, K.accent];
-  const wide = W >= H, gap = wide ? 110 : 56, m = wide ? 90 : 50;
-  const cw = wide ? (W - 2 * m - gap) / 2 : W - 2 * m, maxH = wide ? H - 200 : (H - 2 * m - gap - 380) / 2;
-  const sides = [p.left, p.right];
-  // the card is as tall as its content: header, a 16:9 picture (cut down to fit), and the lines
-  const nLines = Math.max(...sides.map((d) => d.lines?.length ?? 0)), hasImg = sides.some((d) => d.src);
-  const headH = 92 * s, linesH = nLines ? 44 * s + nLines * (hasImg ? 58 : 84) * s : 0;
-  const imgH = hasImg ? Math.min(cw * 0.5625, maxH - headH - linesH) : 0;
-  const chh = Math.min(maxH, headH + imgH + Math.max(linesH, hasImg ? 0 : 200));
-  const rects: Rect[] = [0, 1].map((i) => ({ x: wide ? m + i * (cw + gap) : m, y: wide ? (H - chh) / 2 : 200 + i * (chh + gap), w: cw, h: chh }));
+  const wide = W >= H, gap = wide ? 44 : 36, sides = [p.left, p.right];
+  const hasImg = sides.some((d) => d.src), BAR = 12;
+  const tf = 36 * s, lf = 30 * s, lineH = 52 * s, titleH = 78 * s;
+  const textW = Math.max(...sides.flatMap((d) => [measure(d.title, tf) + 20, ...(d.lines ?? []).map((l) => measure(l, lf, 800) + 34)])) + 18 + 24 + BAR;
+  const cw = Math.round(Math.min(p.w ?? (hasImg ? 600 * s : Math.max(380, textW)), wide ? (W - 120 - gap) / 2 : W - 100));
+  const imgH = hasImg ? Math.round(((cw - BAR - 42) * 9) / 16) : 0;
+  const nLines = Math.max(...sides.map((d) => d.lines?.length ?? 0));
+  const chh = Math.round(titleH + (hasImg ? imgH + 12 : 0) + (nLines ? nLines * lineH + 12 * s : 0) + 16);
+  const gw = wide ? 2 * cw + gap : cw, gh = wide ? chh : 2 * chh + gap;
+  const G = dodge(slot(gw, gh, W, H, p.area, p.x, p.y), p.avoid, W, H);
+  const rects: Rect[] = [0, 1].map((i) => ({ x: wide ? G.x + i * (cw + gap) : G.x, y: wide ? G.y : G.y + i * (chh + gap), w: cw, h: chh }));
   const times = [ev.at + 0.1, at2];
-  const o = life(t, ev, 0.3);
+  const o = fadeOut(t, ev.end, 0.3);
   const vs = p.vs ?? "VS", v = pop(f, fps, at2 + 0.2);
-  const c = wide ? [W / 2, H / 2] : [W / 2, rects[0].y + rects[0].h + gap / 2];
+  const c = wide ? [G.x + cw + gap / 2, G.y + chh / 2] : [G.x + cw / 2, G.y + chh + gap / 2];
   return (
     <AbsoluteFill style={{ opacity: o }}>
-      <AbsoluteFill style={{ background: K.dim, opacity: fadeIn(t, ev.at, 0.3) }} />
       {sides.map((sd, i) => {
-        const r = dodge(rects[i], p.avoid, W, H), k = easeOut(interpolate(t, [times[i], times[i] + 0.5], [0, 1], clamp));
-        const dirx = wide ? (i ? 1 : -1) * 90 : 0, diry = wide ? 0 : (i ? 1 : -1) * 70;
+        const k = easeOut(interpolate(t, [times[i], times[i] + 0.5], [0, 1], clamp));
+        const dirx = wide ? (i ? 1 : -1) * 60 : 0, diry = wide ? 0 : (i ? 1 : -1) * 50;
+        if (t < times[i] - 0.02) return null;
         return (
-          <div key={i} style={{ position: "absolute", left: r.x, top: r.y, width: r.w, height: r.h, opacity: k, transform: `translate(${(1 - k) * dirx}px, ${(1 - k) * diry}px)`, background: K.paper, borderRadius: 24, boxShadow: "0 26px 80px rgba(0,0,0,.55)", overflow: "hidden", fontFamily: SANS, color: K.ink, display: "flex", flexDirection: "column" }}>
-            <div style={{ background: cols[i], height: headH, boxSizing: "border-box", display: "flex", alignItems: "center", padding: "0 32px", fontSize: 46 * s, fontWeight: 900, color: cols[i] === K.warm ? K.ink : "white", letterSpacing: 1, flex: "none" }}>{sd.title}</div>
-            {sd.src ? <div style={{ height: imgH, flex: "none", background: K.ink }}><Img src={staticFile(sd.src)} style={{ width: "100%", height: imgH, objectFit: "cover" }} /></div> : null}
-            {sd.lines?.length ? (
-              <div style={{ padding: `${22 * s}px 32px 0`, display: "flex", flexDirection: "column", gap: 12 * s, justifyContent: hasImg ? "flex-start" : "center", flex: 1 }}>
-                {sd.lines.map((l, j) => (
-                  <div key={j} style={{ display: "flex", gap: 16, alignItems: "baseline", fontSize: (hasImg ? 34 : 50) * s, fontWeight: 800, lineHeight: 1.15, opacity: fadeIn(t, times[i] + 0.35 + j * 0.15, 0.3) }}>
-                    <div style={{ width: 14, height: 14, borderRadius: 7, background: cols[i], flex: "none", transform: "translateY(-4px)" }} />{l}
-                  </div>
-                ))}
-              </div>
-            ) : null}
-          </div>
+          <Card key={i} r={rects[i]} bar={cols[i]} style={{ opacity: k, transform: `translate(${(1 - k) * dirx}px, ${(1 - k) * diry}px)` }}>
+            <div style={{ display: "flex", flexDirection: "column", height: "100%", padding: "0 18px 0 24px", boxSizing: "border-box" }}>
+              <div style={{ height: titleH, flex: "none", display: "flex", alignItems: "center", fontSize: tf, fontWeight: 900, whiteSpace: "nowrap" }}>{sd.title}</div>
+              {sd.src ? <div style={{ height: imgH, flex: "none", borderRadius: 10, overflow: "hidden", background: K.ink }}><Img src={staticFile(sd.src)} style={{ width: "100%", height: imgH, objectFit: "cover" }} /></div> : null}
+              {sd.lines?.length ? (
+                <div style={{ paddingTop: 12 * s, display: "flex", flexDirection: "column" }}>
+                  {sd.lines.map((l, j) => (
+                    <div key={j} style={{ height: lineH, display: "flex", gap: 14, alignItems: "center", fontSize: lf, fontWeight: 800, whiteSpace: "nowrap", opacity: fadeIn(t, times[i] + 0.2 + j * 0.12, 0.3) }}>
+                      <div style={{ width: 12, height: 12, borderRadius: 6, background: cols[i], flex: "none" }} />{l}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          </Card>
         );
       })}
-      {vs !== "" ? (
-        <div style={{ position: "absolute", left: c[0], top: c[1], width: 108, height: 108, marginLeft: -54, marginTop: -54, borderRadius: 54, background: K.ink, border: "5px solid white", color: "white", fontFamily: SANS, fontWeight: 900, fontSize: 40, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: SHADOW, transform: `scale(${v})`, opacity: Math.min(1, v * 1.5) }}>{vs}</div>
+      {vs !== "" && t >= at2 - 0.02 ? (
+        <div style={{ position: "absolute", left: c[0], top: c[1], width: 76, height: 76, marginLeft: -38, marginTop: -38, borderRadius: 38, background: K.ink, border: "4px solid white", color: "white", fontFamily: SANS, fontWeight: 900, fontSize: 28, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: SHADOW, transform: `scale(${v})`, opacity: Math.min(1, v * 1.5) }}>{vs}</div>
       ) : null}
     </AbsoluteFill>
   );
@@ -363,26 +405,34 @@ const Stat: React.FC<{ ev: Ev }> = ({ ev }) => {
 
 // ------------------------------------------------------------------------------------------------------------------------------ Steps
 
-/** A checklist that ticks item by item as each is said: the whole list is there from the start, each item lights up and gets its tick at its time.
- *  props: {title?, items: [{text, at}] (seconds of the rough), x?, y? (top-left; default top left), w? (fits the longest item), avoid?: {x,y,w,h}} */
+/** A checklist that builds as each item is said: the card appears with the first item and grows by one row per item, each row arriving and ticking (nothing is drawn before the first item).
+ *  props: {title?, items: [{text, at}] (seconds of the rough), x?, y? (top-left; default top left), w? (fits the longest item),
+ *          area?: {x,y,w,h} (an empty part of the frame: the card is centred in it), avoid?: {x,y,w,h}} */
 const Steps: React.FC<{ ev: Ev }> = ({ ev }) => {
   const { t, f, fps, W, H, s } = useBox();
-  const p = ev.props as { title?: string; items: { text: string; at: number }[]; x?: number; y?: number; w?: number; avoid?: Rect };
-  const rowH = 88 * s, head = p.title ? 62 * s : 0, pad = 28;
-  const w = Math.min(p.w ?? Math.max(...p.items.map((i) => i.text.length)) * 40 * s * 0.6 + 170, W - 100), h = head + p.items.length * rowH + pad * 2 - 6;
-  const r = dodge({ x: p.x ?? (W >= H ? 96 : 50), y: p.y ?? 110, w, h }, p.avoid, W, H);
-  const k = pop(f, fps, ev.at), o = Math.min(1, k * 1.5, fadeOut(t, ev.end, 0.3));
+  const p = ev.props as { title?: string; items: { text: string; at: number }[]; x?: number; y?: number; w?: number; area?: Rect; avoid?: Rect };
+  const rowH = 74 * s, head = p.title ? 62 * s : 0, pad = 26 * s, BAR = 12, fs = 36 * s;
+  const w = Math.min(p.w ?? Math.max(...p.items.map((i) => measure(i.text, fs, 800))) + 46 * s + 22 * s + 28 + 30 + BAR, W - 100);
+  const first = Math.min(...p.items.map((i) => i.at)) - 0.1;
+  const fullH = head + p.items.length * rowH + pad * 2 - 6;
+  const base = slot(w, fullH, W, H, p.area, p.x ?? (p.area ? undefined : W >= H ? 96 : 50), p.y ?? (p.area ? undefined : 110));
+  const r = dodge(base, p.avoid, W, H);
+  const shown = p.items.reduce((a, it) => a + prog(t, it.at - 0.05, 0.4), 0);
+  const curH = head + shown * rowH + pad * 2 - 6 * Math.min(1, shown);
+  const k = pop(f, fps, first), o = Math.min(1, k * 1.5, fadeOut(t, ev.end, 0.3));
+  if (t < first - 0.05) return null;
   return (
-    <Card r={r} style={{ opacity: o, transform: `translateX(${(1 - k) * -50}px)` }}>
-      {p.title ? <div style={{ position: "absolute", left: 30, top: 24 * s, fontSize: 30 * s, fontWeight: 800, letterSpacing: 3, color: K.accent, textTransform: "uppercase" }}>{p.title}</div> : null}
+    <Card r={{ ...r, h: curH }} style={{ opacity: o, transform: `translateX(${(1 - k) * -40}px)` }}>
+      {p.title ? <div style={{ position: "absolute", left: 30, top: 22 * s, fontSize: 26 * s, fontWeight: 800, letterSpacing: 3, color: K.accent, textTransform: "uppercase", whiteSpace: "nowrap" }}>{p.title}</div> : null}
       {p.items.map((it, i) => {
-        const d = prog(t, it.at, 0.35), b = pop(f, fps, it.at), top = pad + head + i * rowH;
+        const a = prog(t, it.at - 0.05, 0.4), d = prog(t, it.at + 0.1, 0.35), b = pop(f, fps, it.at + 0.1), top = pad + head + i * rowH;
+        if (t < it.at - 0.06) return null;
         return (
-          <div key={i} style={{ position: "absolute", left: 28, right: 24, top, height: rowH, display: "flex", alignItems: "center", gap: 22 * s }}>
-            <div style={{ width: 50 * s, height: 50 * s, flex: "none", borderRadius: 14 * s, boxSizing: "border-box", border: `4px solid ${d > 0.5 ? K.green : "rgba(20,22,28,.22)"}`, background: d > 0.5 ? K.green : "transparent", transform: `scale(${d > 0 ? 0.85 + 0.15 * b : 1})`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width={30 * s} height={30 * s} viewBox="0 0 30 30"><path d="M5 16 L12 23 L25 7" fill="none" stroke="white" strokeWidth={5} strokeLinecap="round" strokeLinejoin="round" pathLength={1} strokeDasharray={1} strokeDashoffset={1 - d} /></svg>
+          <div key={i} style={{ position: "absolute", left: 28, right: 24, top, height: rowH, opacity: a, display: "flex", alignItems: "center", gap: 22 * s }}>
+            <div style={{ width: 46 * s, height: 46 * s, flex: "none", borderRadius: 13 * s, boxSizing: "border-box", border: `4px solid ${d > 0.5 ? K.green : "rgba(20,22,28,.22)"}`, background: d > 0.5 ? K.green : "transparent", transform: `scale(${d > 0 ? 0.85 + 0.15 * b : 1})`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width={28 * s} height={28 * s} viewBox="0 0 30 30"><path d="M5 16 L12 23 L25 7" fill="none" stroke="white" strokeWidth={5} strokeLinecap="round" strokeLinejoin="round" pathLength={1} strokeDasharray={1} strokeDashoffset={1 - d} /></svg>
             </div>
-            <div style={{ fontSize: 40 * s, fontWeight: 800, color: K.ink, opacity: 0.38 + 0.62 * d, whiteSpace: "nowrap", lineHeight: 1.1 }}>{it.text}</div>
+            <div style={{ fontSize: fs, fontWeight: 800, color: K.ink, whiteSpace: "nowrap", lineHeight: 1.1 }}>{it.text}</div>
           </div>
         );
       })}
