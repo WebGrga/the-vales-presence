@@ -25,7 +25,7 @@ export default [
     const r = await manage(ctx).duplicate(ctx.params[0], { footage: ['link', 'copy', 'none'].includes(b.footage) ? b.footage : 'link', title: b.title });
     ctx.send(res, 200, { ok: true, id: r.project.id, title: r.project.title, footage: r.footage });
   } },
-  { method: 'POST', path: P('/bin'), handler: async (req, res, ctx) => ok(ctx, res, manage(ctx).toBin(ctx.params[0])) },
+  { method: 'POST', path: P('/bin'), handler: async (req, res, ctx) => ok(ctx, res, await manage(ctx).toBin(ctx.params[0])) },
   { method: 'GET', path: '/api/bin', handler: async (req, res, ctx) => {
     const items = await manage(ctx).binList();
     ctx.send(res, 200, { items, bytes: items.reduce((a, x) => a + x.bytes, 0) });

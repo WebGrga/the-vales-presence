@@ -8,6 +8,7 @@ import { initStages } from './stages.js';
 import { slugify, uniqueId, writeJsonAtomic } from './projects.js';
 import { binName, parseBinName, binNote, cleanTitle, copyTitle, copyProject } from './project-bin.js';
 import { measure, freeablePlan, freeSpace } from './project-space.js';
+import { unwatch } from './routes/studio.js';
 import { zipCommand, unzipCommand, listCommand, unsafeEntries, entryNames, run, EXCLUDES } from './project-zip.js';
 
 const fail = (status, message) => Object.assign(new Error(message), { status });
@@ -68,12 +69,22 @@ export function createManage(ctx, projects) {
   }
 
   // ---------------------------------------------------------------- the Bin
-  function toBin(id) {
+  // Presence itself holds an open project's folder (the Studio's watcher, the idle agent session's working directory):
+  // both let go first, then the move is tried for a few seconds while Windows closes the handles
+  async function toBin(id) {
     const p = need(id);
     if (busy(id)) throw fail(409, 'the agent is working on this project: stop it first');
+    unwatch(id);
+    try { ctx.agent?.release?.(id); } catch {}
     fs.mkdirSync(binDir, { recursive: true });
     const name = binName(id, Date.now(), fs.readdirSync(binDir));
-    try { fs.renameSync(dir(id), path.join(binDir, name)); } catch (e) { throw fail(409, `could not move the folder (is a program using a file in it?): ${e.code || e.message}`); }
+    for (let i = 0; ; i++) {
+      try { fs.renameSync(dir(id), path.join(binDir, name)); break; }
+      catch (e) {
+        if (i < 12 && (e.code === 'EPERM' || e.code === 'EBUSY' || e.code === 'EACCES')) { await new Promise((ok) => setTimeout(ok, 400)); continue; }
+        throw fail(409, `could not move the folder: a program outside Presence has a file in it open (a video player, Explorer, an editor). Close it and try again. (${e.code || e.message})`);
+      }
+    }
     writeJsonAtomic(path.join(binDir, `${name}.bin.json`), binNote(p));
     sizes.delete(id);
     ctx.broadcast({ type: 'projects', change: 'binned', project: id });

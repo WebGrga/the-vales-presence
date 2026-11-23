@@ -392,6 +392,8 @@ export function createAgent(ctx) {
       fires: Fires.list(S.F), question: S.question ? { questions: S.question.questions, at: S.question.at } : null, turn: S.turn ? { start: S.turn.start, tools: S.turn.tools } : null, events };
   }
   // forget the conversation: the next turn starts a fresh session
+  // an idle session lets go of its project folder (the Bin moves it); the saved session id stays, so it resumes later
+  function release(id) { const S = open[id]; if (!S || S.busy || S.pending) return false; shut(S); return true; }
   function forget(id) { const S = open[id]; if (S) shut(S); writeSaved(id, null); return { ok: true }; }
   // what the stage view needs, cheap enough for every project in the list
   function live(id) {
@@ -409,5 +411,5 @@ export function createAgent(ctx) {
   async function closeAll() { clearInterval(ticker); for (const S of Object.values(open)) { try { await endFires(S, Object.keys(S.F.fires)); } catch {} shut(S); } }
   const isBusy = (id) => !!(open[id]?.busy || open[id]?.pending);
 
-  return { turn, say, answer, stop, stopFire, status, live, forget, closeAll, isBusy, settings, setSettings, emit: emitId, models: () => MODELS, efforts: () => EFFORTS, modes: () => MODES };
+  return { turn, say, answer, stop, stopFire, status, live, forget, release, closeAll, isBusy, settings, setSettings, emit: emitId, models: () => MODELS, efforts: () => EFFORTS, modes: () => MODES };
 }

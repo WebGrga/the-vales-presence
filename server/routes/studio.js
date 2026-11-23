@@ -33,6 +33,9 @@ function watch(ctx, id) {
   } catch { /* no recursive watch on this system: the tab still reloads on its own actions */ }
 }
 
+// the Bin moves a project folder: on Windows a watcher inside it holds it, so it lets go first
+export function unwatch(id) { const w = watchers.get(id); if (!w) return false; try { w.close(); } catch {} watchers.delete(id); return true; }
+
 // only the browser's own page may press Upload: a same-origin fetch, never a script or an agent's curl
 function fromThePage(req) {
   const origin = req.headers.origin, host = req.headers.host;
