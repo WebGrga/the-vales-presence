@@ -91,11 +91,11 @@ export function createRunner(ctx) {
     return h;
   }
 
-  // the user's own house rules file, made from the shipped starter once (the context room's helper), so the agent's
-  // first lesson goes there and never into craft/
   // the user's house rules as a stage began: what the agent adds during the stage is told to the user when it ends
   const rulesAtStart = new Map();
   const rulesFile = () => path.join(ctx.dataDir, 'craft', 'house-rules.md');
+  // the user's own house rules file, made from the shipped starter once (the context room's helper), so the agent's
+  // first lesson goes there and never into craft/
   let rulesHelper;
   async function ensureHouseRules() {
     try {
