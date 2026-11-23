@@ -6,8 +6,12 @@ const base = { pref: 'on', permission: 'granted', visible: false, focused: false
 
 test('nothing happens while it is off or while you are looking', () => {
   assert.deepEqual(decide({ ...base, pref: 'off' }), { desktop: false, badge: false });
-  assert.deepEqual(decide({ ...base, pref: null }), { desktop: false, badge: false });
+  assert.deepEqual(decide({ ...base, visible: true, focused: true, pref: null }), { desktop: false, badge: false });
   assert.deepEqual(decide({ ...base, visible: true, focused: true }), { desktop: false, badge: false });
+});
+
+test('not asked yet: the tab title badge only, no desktop note', () => {
+  assert.deepEqual(decide({ ...base, pref: null }), { desktop: false, badge: true });
 });
 
 test('away: a note and a badge; without permission only the badge', () => {

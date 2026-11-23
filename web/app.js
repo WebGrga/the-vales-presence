@@ -21,6 +21,7 @@ import { mountActivity } from './shell/activity.js';
 import { mountDrawer } from './shell/drawer.js';
 import { mountGoLine } from './shell/go-line.js';
 import { createNotify, badged } from './shell/notify.js';
+import { mountStageDone } from './shell/stage-done.js';
 import { appAction } from './shell/app-keys.js';
 import { mountPalette } from './shell/palette.js';
 import { createTour } from './shell/tour.js';
@@ -99,6 +100,7 @@ top.append(brand, pickEl, h('div.grow'), saveSlot, actSlot, tabBar, keysBtn, liv
 app.save = mountSaveChip(saveSlot, app);
 app.undo = mountUndo(app);
 app.notify = createNotify(app);
+mountStageDone(app);
 app.drawer = mountDrawer(app);
 app.palette = mountPalette(app);
 app.tour = createTour(app);

@@ -33,9 +33,10 @@ export function createStore(app, id) {
     if (!edl || !Array.isArray(edl.items)) { S.problem = 'no-edl'; S.loaded = true; emit('all'); return; }
     S.edl = edl; S.fps = Number(edl.fps) || 30; S.basePs = pieces(edl);
     const [cutsData, working, rough, events, finalUrl] = await Promise.all([
-      readCuts(), readWorking(), fetchJson(media('video/out/rough-words.json')), fetchJson(media('video/out/events.json')), readFinal(), readEdits(),
+      readCuts(), readWorking(), fetchJson(media('video/out/rough-words.json')), fetchJson(media('video/out/events.json')), S.renderRead ? S.finalUrl : readFinal(), readEdits(),
     ]);
-    S.finalUrl = finalUrl;
+    // the render is read on the first load only: later ones come from renderLanded (a file the server says is finished)
+    if (!S.renderRead) { S.renderRead = true; S.finalUrl = finalUrl; S.finalIsProof = lastProof; }
     S.cuts = cutsData.cuts; S.review = cutsData.review;
     S.strikes = []; S.trims = []; S.blades = [];
     S.staleWorking = false;
@@ -61,20 +62,31 @@ export function createStore(app, id) {
 
   // the rendered video to look at: the final (video/out/final.mp4), or the agent's proof (video/out/proof.mp4: a cheap 540p render of the same
   // timeline) when it is newer, so a wrong look shows before the full render. -> its URL with its time, so a new render plays fresh; S.finalIsProof
+  let lastProof = false, lastSig = '', pollSig = '';
   async function readFinal() {
     const head = async (name) => {
       try {
         const r = await fetch(media(`video/out/${name}`), { method: 'HEAD', cache: 'no-cache' });
         if (!r.ok) return null;
         const mod = r.headers.get('last-modified') || '';
-        return { name, mod, t: Date.parse(mod) || 0, url: `${media(`video/out/${name}`)}?v=${encodeURIComponent(mod || Date.now())}` };
+        return { name, mod, len: r.headers.get('content-length') || '', t: Date.parse(mod) || 0, url: `${media(`video/out/${name}`)}?v=${encodeURIComponent(mod || Date.now())}` };
       } catch { return null; }
     };
     const [fin, proof] = await Promise.all([head('final.mp4'), head('proof.mp4')]);
     const pick = fin && proof ? (proof.t > fin.t ? proof : fin) : fin || proof;
-    S.finalIsProof = pick?.name === 'proof.mp4';
+    lastProof = pick?.name === 'proof.mp4'; lastSig = pick ? `${pick.url}|${pick.len}` : '';
     return pick ? pick.url : null;
   }
+
+  // a new proof or final is there (offered to the viewer, which may be playing, never swapped in under it): the viewer decides (it switches when paused, a chip when playing)
+  function landed(url, isProof) {
+    if (!url || url === S.finalUrl || url === S.landed?.url) return;
+    S.landed = { url, isProof, at: Date.now() };
+    emit('render');
+  }
+  async function renderLanded() { landed(await readFinal(), lastProof); }
+  // the viewer took it (or the user pressed Show it)
+  function adopt() { if (!S.landed) return false; S.finalUrl = S.landed.url; S.finalIsProof = S.landed.isProof; S.landed = null; return true; }
 
   // your visual edits (redactions.json, event-edits.json) and the review items the stages wrote; a missing file is null
   async function readEdits() {
@@ -260,7 +272,8 @@ export function createStore(app, id) {
     app.on('files', (m) => {
       if (m.project && m.project !== id) return;
       const paths = (m.paths || []).map((p) => String(p).replace(/\\/g, '/'));
-      if (paths.some((p) => /out\/(edl\.json|rough-words\.json|events\.json|proof\.mp4|final\.mp4)$/.test(p))) load();
+      if (paths.some((p) => /out\/(edl\.json|rough-words\.json|events\.json)$/.test(p))) load();
+      else if (paths.some((p) => /out\/(proof|final)\.mp4$/.test(p))) renderLanded();
       else if (paths.some((p) => /out\/(redactions|event-edits|review-items)\.json$/.test(p))) readEdits().then(() => emit('edits'));
       else if (paths.some((p) => /out\/cuts(-review)?\.json$/.test(p))) reloadCuts();
       else if (paths.some((p) => /work\/(proxy|peaks)\//.test(p))) loadProxy();
@@ -271,13 +284,14 @@ export function createStore(app, id) {
 
   // the agent renders a proof while it works and nothing says so: look for a new one now and then (a HEAD request each), and show it
   const proofTimer = setInterval(async () => {
-    if (!S.edl || document.hidden) return;
+    if (!S.edl || document.hidden || app.project?.()?.view?.running) return; // while a stage runs the server says when a file is finished
     const url = await readFinal();
-    if (url !== S.finalUrl) load();
+    if (url === S.finalUrl || url === S.landed?.url) { pollSig = ''; return; }
+    if (pollSig === lastSig) { pollSig = ''; landed(url, lastProof); } else pollSig = lastSig; // the same file twice in a row: it is not being written
   }, 10000);
 
   return {
-    S, load, choose, note, strike, undo, redo, resetWorking, flush, clipUrl, editWorking, saveEdits,
+    S, load, adopt, renderLanded, choose, note, strike, undo, redo, resetWorking, flush, clipUrl, editWorking, saveEdits,
     on(fn) { fns.add(fn); return () => fns.delete(fn); },
     restorable: (cid) => !!S.edl && restorable(S.edl.items, S.cuts.find((c) => c.id === cid)),
     media,

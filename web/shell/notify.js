@@ -9,13 +9,13 @@ const ASKED = 'presence.notify.asked';
 export const getPref = () => { try { return localStorage.getItem(KEY); } catch { return null; } };
 export const setPref = (v) => { try { if (v) localStorage.setItem(KEY, v); else localStorage.removeItem(KEY); } catch {} };
 
-// pure: what to do with an event. state: { pref, permission, visible, focused, current (is it the open project), supported }
+// pure: what to do with an event (the tab title badge until you said no; the desktop note only after a yes). state: { pref, permission, visible, focused, current (is it the open project), supported }
 // -> { desktop: bool, badge: bool }
 export function decide(state) {
-  if (state.pref !== 'on') return { desktop: false, badge: false };
+  if (state.pref === 'off') return { desktop: false, badge: false }; // a "no" stays a no
   const looking = state.visible && state.focused;
   if (looking) return { desktop: false, badge: false };
-  return { desktop: !!state.supported && state.permission === 'granted', badge: true };
+  return { desktop: state.pref === 'on' && !!state.supported && state.permission === 'granted', badge: true };
 }
 
 // pure: the words of an event -> { title, body } (the project's title is the user's own)

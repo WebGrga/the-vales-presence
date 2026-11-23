@@ -3,6 +3,7 @@
 import { h } from '../shell/dom.js';
 import { SIZES, uiSize, setUiSize } from '../shell/prefs.js';
 import { getPref, setPref } from '../shell/notify.js';
+import { soundOn, setSound, chime } from '../shell/stage-done.js';
 
 const row = (label, control, help) => h('div.set-row', h('div.set-head', h('label.set-label.pixel', label), control), help ? (typeof help === 'string' ? h('p.set-help', help) : help) : null);
 
@@ -32,6 +33,11 @@ export function mountLocal(el, app) {
   });
   el.append(row('Notifications', h('span.set-toggle', nBox, nWord), nSay));
   paintNotify();
+
+  const sBox = h('input', { type: 'checkbox', id: 'set-sound', checked: soundOn() });
+  const sWord = h('span', soundOn() ? 'On' : 'Off');
+  sBox.addEventListener('change', () => { setSound(sBox.checked); sWord.textContent = sBox.checked ? 'On' : 'Off'; if (sBox.checked) chime(); });
+  el.append(row('Sound when a stage is done', h('span.set-toggle', sBox, sWord), 'A short soft sound when a stage ends, with the “watch it” note. Applies at once.'));
 
   const size = h('select', { id: 'set-size', title: 'The size of the whole screen' }, ...SIZES.map((s) => h('option', { value: s.value }, s.label)));
   size.value = uiSize();

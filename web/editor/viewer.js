@@ -18,7 +18,8 @@ export function createViewer(store, ui) {
   const badge = h('div.v-badge.pixel');
   const note = h('div.v-note');
   const empty = h('div.v-empty', { hidden: true });
-  const screen = h('div.v-screen', ...vids, card, badge, note, empty);
+  const chip = h('button.v-chip', { type: 'button', hidden: true, title: 'A new render finished while you were watching. Show it from the same moment.', on: { click: () => takeLanded(true) } });
+  const screen = h('div.v-screen', ...vids, card, badge, note, empty, chip);
   const redactor = createRedactor(store, ui, screen);
   const playBtn = button('play', '', 'Play / pause (Space)', () => toggle());
   const tc = h('div.v-tc.pixel');
@@ -270,9 +271,32 @@ export function createViewer(store, ui) {
     if (mode === 'final' && !S.finalUrl) { setMode('after'); return; }
     if (S.finalUrl && S.finalUrl !== finalSeen && !playing) { finalSeen = S.finalUrl; if (mode !== 'final') { setMode('final'); return; } } // a new final: show it
     if (mode === 'after' && !playing) seek(Math.min(t, S.ps[S.ps.length - 1].end));
-    else if (mode === 'final') seek(t);
+    else if (mode === 'final') { if (!playing) seek(t); }
     else if (mode === 'after' && playing) { const i = pieceAt(S.ps, t); act = 1 - act; startPiece(i, t - S.ps[i].at, true); }
     else emitTime();
+  }
+  // a new proof or final finished (the store says so): paused, it is shown at once; playing, a chip offers it
+  function takeLanded(keepPlaying) {
+    const was = playing;
+    if (!store.adopt()) { chip.hidden = true; return; }
+    chip.hidden = true; finalSeen = S.finalUrl; paintMode();
+    if (!S.ps.length) return refresh();
+    if (mode !== 'final') { setMode('final'); if (was && keepPlaying && !playing) play(); } else { seek(t); if (was && keepPlaying && !playing) play(); }
+  }
+  function onLanded() {
+    const l = S.landed;
+    if (!l) return;
+    if (!S.ps.length || !playing) { takeLanded(false); return; }
+    chip.textContent = `New ${l.isProof ? 'proof' : 'final'} ready · Show it`;
+    chip.hidden = false;
+  }
+  const offLanded = store.on(({ what }) => { if (what === 'render') onLanded(); });
+  // "watch it": the newest render (else the edit), from the start, playing
+  function watchResult() {
+    if (S.landed) store.adopt();
+    chip.hidden = true; paintMode();
+    if (S.finalUrl) { finalSeen = S.finalUrl; if (playing) pause(); mode === 'final' ? seek(0) : setMode('final'); } else if (mode !== 'after') setMode('after');
+    seek(0, { play: true });
   }
   for (const v of vids) v.addEventListener('loadeddata', () => { if (note.textContent.startsWith('This video could not play')) note.hidden = true; }); // it plays now (a moved recording was found again)
   for (const v of vids) v.addEventListener('error', () => {
@@ -286,9 +310,9 @@ export function createViewer(store, ui) {
   paintMode();
   playBtn.replaceChildren(icon('play'));
   return {
-    el, play, pause, toggle, seek, seekSource, step, shuttle, setMode, playAb, refresh, boxes: redactor,
+    el, play, pause, toggle, watchResult, seek, seekSource, step, shuttle, setMode, playAb, refresh, boxes: redactor,
     get t() { return t; }, get mode() { return mode; }, get playing() { return playing; },
     mute(m) { vids.forEach((v) => { v.muted = m || (mode === 'after' && S.ps[cur]?.muted); }); },
-    dispose() { cancelAnimationFrame(raf); vids.forEach((v) => { v.pause(); v.removeAttribute('src'); v.load(); }); },
+    dispose() { offLanded(); cancelAnimationFrame(raf); vids.forEach((v) => { v.pause(); v.removeAttribute('src'); v.load(); }); },
   };
 }

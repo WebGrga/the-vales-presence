@@ -186,6 +186,10 @@ The panel shows what the agent does as it happens: its words, and one line per t
 
 After the rough is locked, the **Visuals** stage dresses it: overlays, punch-ins, captions and sound, from the overlay kit (`kit/templates`). The agent first renders a **proof** (a 540p look at only the overlay windows) and checks it, then the final in the background. You see the result in the viewer's **Final** mode, with overlays on V2 and captions on CC. Fix an overlay yourself in the inspector, draw a blur box, or tell the agent in the panel. A fix renders only what changed ([how-it-works.md](how-it-works.md#overlay-windows-and-chunk-caching)). The **Inspect** stage checks length, the locked voice, frames and text in the safe areas, and its points for you show in **From the agent** and as markers. At **Final review** press **Approve**, or **Send back** (it goes to Visuals; the talk stays locked).
 
+### Watching the agent work
+
+While a stage runs, a line above the editor says what the agent is doing right now. Its files show up as they are finished (the server polls the output folder and tells the page once a file stopped growing): the overlays appear on the timeline, a new proof or final opens in the viewer when you are paused, and a chip "New proof ready · Show it" offers it when you are playing, so playback is never yanked. **Plan** opens the agent's visual plan. When a stage ends, a note "Visuals is done: watch it" with a **Watch** button plays the result, with a soft sound (Settings can turn it off), a number in the tab title and, if you said yes to the one-time question, a desktop notification when the page is not in front.
+
 ## The Shorts tab
 
 For the recipe **Shorts from a long video** (and any project that has Shorts). At the pick stage the agent reads the whole talk and the tab shows each moment as a 9:16 card:

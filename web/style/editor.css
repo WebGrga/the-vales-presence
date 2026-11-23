@@ -272,3 +272,27 @@ textarea.ag-own:focus { border-color: var(--orange); }
 .bin-err { color: var(--lred); font-size: 13px; margin: 0; }
 .bin-dialog-btns { display: flex; gap: 8px; justify-content: flex-end; }
 .bin-item.is-missing .bin-acts { position: static; background: none; padding: 0 2px; pointer-events: auto; }
+
+/* the "now" line above the editor: what the agent does, what just landed, the Plan button */
+.ed-live { display: flex; align-items: center; gap: 8px; padding: 4px 10px; min-height: 28px; background: var(--dblue); color: var(--cream); font-size: 13px; animation: fade-in 0.3s ease; }
+.ed-live[hidden] { display: none; }
+.ed-live.ask { background: var(--dbrown); box-shadow: inset 4px 0 0 var(--orange); }
+.ed-live.sleep, .ed-live.queue { background: var(--dusk); }
+.ed-live.news { background: var(--dusk); box-shadow: inset 4px 0 0 var(--lgreen); }
+.ed-live .ll-what { font-weight: 600; }
+.ed-live .ll-step { color: var(--wall); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.ed-live .ll-dot { width: 8px; height: 8px; flex: none; background: var(--lgreen); border-radius: 50%; }
+.ed-live.work .ll-dot, .ed-live.sleep .ll-dot { animation: ll-pulse 1.4s ease-in-out infinite; }
+.ed-live:not(.work):not(.sleep):not(.ask):not(.queue):not(.stalled) .ll-dot { opacity: 0.5; animation: none; }
+@keyframes ll-pulse { 50% { opacity: 0.3; } }
+/* the chip over the viewer when a new proof or final finishes while you watch */
+.v-chip { position: absolute; right: 10px; top: 8px; z-index: 3; padding: 4px 10px; background: var(--dbrown); color: var(--cream); border: var(--px) solid var(--orange); font-size: 13px; cursor: pointer; animation: fade-in 0.3s ease; }
+.v-chip[hidden] { display: none; }
+.v-chip:hover { background: var(--orange); color: var(--outline); }
+.toast .toast-act { margin-top: 6px; }
+.plan-layer { position: fixed; inset: 0; z-index: 70; background: rgba(27, 27, 42, 0.72); display: flex; align-items: center; justify-content: center; padding: 16px; opacity: 0; transition: opacity var(--ease); }
+.plan-layer.in { opacity: 1; }
+.plan-box { width: min(760px, 100%); max-height: 86vh; display: flex; flex-direction: column; background: var(--night); padding: 10px 14px; }
+.plan-box header { display: flex; align-items: center; gap: 8px; }
+.plan-box h3 { margin: 0; color: var(--tan); font-size: 16px; }
+.plan-body { overflow: auto; margin-top: 8px; font-size: 14px; line-height: 1.5; }

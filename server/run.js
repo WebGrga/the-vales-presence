@@ -15,6 +15,7 @@ import { keepExisting } from './stage-keep.js';
 import { createLive, outState, withBack } from './run-live.js';
 import { ITEMS_FILE } from './review-items.js';
 import { createExtras } from './run-extra.js';
+import { createOutWatch } from './out-watch.js';
 import { addedRules, rulesNotice } from './context/rules-diff.js';
 
 const readText = (f) => { try { return fs.readFileSync(f, 'utf8'); } catch { return ''; } };
@@ -43,6 +44,8 @@ export function createRunner(ctx) {
     if (!r) throw Object.assign(new Error(`the recipe "${p.recipe}" is missing`), { status: 400 });
     return { p, r, dir: P().dir(id) };
   }
+  // the agent writes its outputs itself: while a stage runs they are polled and told as they finish (out-watch.js)
+  const OW = ctx.outWatch = createOutWatch({ dirOf: (id) => P().dir(id), broadcast: (m) => ctx.broadcast(m), busy: (id) => !!ctx.agent?.isBusy?.(id), log: (...a) => ctx.log?.(...a) });
   const L = createLive(ctx, { load, heavyRunning, queue, stopAfter });
   ctx.liveChanged = L.changed; // agent.js calls it when a question, a fire or the quiet guard changes
   ctx.spendChanged = () => checkSpend(); // agent.js calls it when a chat turn ended
@@ -157,6 +160,7 @@ export function createRunner(ctx) {
     if (wasQueued) queue.splice(queue.indexOf(id), 1);
     b.project.stages[st.id].pid = process.pid; // whose turn it is: another server's boot leaves it alone
     save(b.project);
+    OW.start(id);
     if (wasQueued) { ctx.broadcast({ type: 'queue', project: id, started: true, stage: st.id }); requeue(); }
     const started = Date.now();
     P().log(id, { stage: st.id, kind: st.kind, status: 'started', start: new Date(started).toISOString(), chained: chained || undefined });
@@ -171,6 +175,7 @@ export function createRunner(ctx) {
     const freed = heavyRunning.delete(id);
     try { await afterTurn(id, st, res, started); }
     finally {
+      OW.stop(id);
       // a heavy slot came free: the next in line starts
       if (freed || heavyRunning.size < limit()) {
         const next = queue[0];

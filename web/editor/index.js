@@ -11,6 +11,7 @@ import { createTranscript } from './transcript.js';
 import { createCutsList } from './cuts-list.js';
 import { createAgentPanel } from './agent-panel.js';
 import { createMediaBin } from './media-bin.js';
+import { createLiveLine } from './live-line.js';
 import { comboOf, actionFor, ownsKeys } from './keys.js';
 import { stepCut, notesWithChoices } from './cuts-order.js';
 import { editRangeStrikes } from './edl-edit.js';
@@ -86,7 +87,9 @@ export async function mount(root, app) {
   const right = h('div.ed-right', P.cuts.el, bars.agent, P.agent.el);
   const ed = h('div.ed', { 'data-scope': 'editor' }, left, bars.left, P.view.el, bars.right, right, bars.tl, P.tl.el);
   const stale = h('div.ed-stale', { hidden: true });
-  root.replaceChildren(stale, ed);
+  const liveLine = createLiveLine(app, p.id);
+  root.replaceChildren(stale, liveLine.el, ed);
+  app.hooks.watch = () => viewer.watchResult();
   restoreSizes(ed, SIZES);
   const redraw = () => timeline.draw();
   split(bars.left, { host: ed, name: 'left', axis: 'x', min: 200, max: 700, onMove: redraw });
@@ -201,7 +204,7 @@ export async function mount(root, app) {
   return {
     unmount() {
       removeEventListener('keydown', onKey, true);
-      timeline.inspector.flush(); store.flush(); store.dispose(); viewer.dispose(); agent.dispose(); bin.dispose(); transcript.dispose();
+      liveLine.dispose(); delete app.hooks.watch; timeline.inspector.flush(); store.flush(); store.dispose(); viewer.dispose(); agent.dispose(); bin.dispose(); transcript.dispose();
       if (app.hooks.notes) { delete app.hooks.notes; delete app.hooks.flush; }
     },
   };

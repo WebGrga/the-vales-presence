@@ -11,7 +11,7 @@ let box = null;
 const shown = new Map(); // text -> the toast still on screen that holds it
 let last = null;         // the newest toast: { el, at, kind, words, life, timer, restart }
 
-export function toast(text, kind = 'info', ms = 4200) {
+export function toast(text, kind = 'info', ms = 4200, opts = {}) {
   if (!text) return;
   const words = String(text);
   if (shown.has(words)) return;
@@ -20,7 +20,8 @@ export function toast(text, kind = 'info', ms = 4200) {
   const lifeOf = (kind2) => (kind2 === 'error' ? Math.max(ms * 2.5, 10000) : kind2 === 'ask' ? Math.max(ms, 9000) : ms);
 
   // together with the one just shown: one more line in it
-  if (last && last.el.isConnected && Date.now() - last.at < TOGETHER_MS) {
+  const action = opts?.action;
+  if (!action && last && last.el.isConnected && Date.now() - last.at < TOGETHER_MS) {
     last.el.append(h('div', words));
     shown.set(words, last);
     last.words.push(words);
@@ -30,10 +31,10 @@ export function toast(text, kind = 'info', ms = 4200) {
     return;
   }
 
-  const t = { el: h('div.toast.' + k, { role: k === 'error' || k === 'ask' ? 'alert' : 'status', title: 'Click to close' }, h('div', words)), at: Date.now(), kind: k, words: [words], life: lifeOf(k), timer: 0, restart: null };
+  const t = { el: h('div.toast.' + k, { role: k === 'error' || k === 'ask' ? 'alert' : 'status', title: 'Click to close' }, h('div', words), action ? h('button.small.go.toast-act', { type: 'button', on: { click: (e) => { e.stopPropagation(); go(); try { action.fn(); } catch {} } } }, action.label) : null), at: Date.now(), kind: k, words: [words], life: lifeOf(k), timer: 0, restart: null };
   box.append(t.el);
   shown.set(words, t);
-  last = t;
+  if (!action) last = t;
   requestAnimationFrame(() => t.el.classList.add('in'));
   const go = () => { clearTimeout(t.timer); for (const w of t.words) shown.delete(w); t.el.classList.remove('in'); setTimeout(() => t.el.remove(), 350); };
   t.restart = (m) => { clearTimeout(t.timer); t.timer = setTimeout(go, m); };
