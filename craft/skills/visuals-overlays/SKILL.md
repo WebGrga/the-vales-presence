@@ -7,11 +7,16 @@ description: Dress a locked rough with overlays, zooms, captions and sound, and 
 
 The rough is locked. Visuals sit on top of it and never change a word of the talk. Work from `video/`.
 
+## Start from the plan
+
+Open `out/visual-plan.md`. When it is missing, write it first with the visuals-plan skill. Every event below comes from a beat in it, and an event with no beat does not go in. The pace in the house rules is filled from the plan, never with echo words or filler emoji.
+
 ## What you have
 
 - `out/rough-words.json`: every word with its time in the rough. **Times come only from here** (or from `tmap`), never from guesses or from the source recording's clock.
 - `out/rough-scenes.json`: where the picture changes.
 - The overlay kit in `remotion/src/components.tsx`: it exports `COMPONENTS`, and each component's doc comment lists its props. If the project has no kit yet, copy one from the app's `kit/templates/` that suits the video, and say which.
+- The show components (`Callout`, `Spotlight`, `Inset`, `Flow`, `Compare`, `Stat`, `Steps`, `Scoreboard`) point at, explain, count and compare real things. They live in the app's `kit/show/show.tsx`. When the project's kit lacks them, copy that file into `remotion/src/` and add `...SHOW` to `COMPONENTS` (`import { SHOW } from './show'`). Their doc comments list the props. Prefer them to text pieces whenever the plan says point, explain, count or compare.
 - The house rules and the brief: what the user likes on screen and what the video must show.
 - **The user's own edits, which win over yours:** `out/redactions.json` (blur boxes the user drew in the viewer) and `out/event-edits.json` (overlays the user changed in the inspector: words, props, timing, hidden). The engine applies both on every check, proof and final; you never copy them into events.json. Read them before a round so you know what the user already fixed. To take one of their edits over into your plan, put it in `make_overlays.py` and tell the user; do not delete their files.
 
@@ -34,6 +39,7 @@ print(gaps(cut, doc))                     # stretches over 10 s where nothing ch
 - An event is `{id, kind, at, end}` plus what draws it: `comp` and `props` (a Remotion component), zoom fields (drawn by ffmpeg, no render), `box` (a blur, drawn by ffmpeg, no render), or `words` (a caption, drawn as subtitles, no render).
 - `kind` is the pace check's word: `text`, `card`, `effect`, `caption`, `zoom`; and `blur`, which the pace check leaves out.
 - **Ids are stable.** Never renumber on an edit: a changed id is a new window to render.
+- Positions on the screen recording (a box for `Callout`, `Spotlight`, `Inset`) come from looking at a still at that time (`sheet.py` or an ffmpeg frame), never from a guess. Pass `avoid` with the face-cam corner when the component takes it.
 - Anchor each overlay on the word it belongs to, so it appears as the thing is said.
 - Leave room: an overlay that covers the speaker's face or the subject on screen is in the wrong place.
 - Captions never show fillers. Zooms never overlap.
@@ -55,7 +61,7 @@ E.blur('B2', 61.2, 66.0, [0, 980, 640, 100], mode='pixelate')                   
 
 ## Proof
 
-`python $ENGINE/run.py --proof` (background). It renders only the windows whose hash changed, at 540p, and writes `out/proof.mp4` and `out/proof-sheet.jpg` with each clip labelled by time and event ids. Look at the sheet and the clips yourself before anyone else does: text that is cut off, an overlay over a face, a zoom that hides what is used, timing that lands before the word. Fix the events and run `--proof` again; it re-renders only what changed. Report how long each proof took.
+`python $ENGINE/run.py --proof` (background). It renders only the windows whose hash changed, at 540p, and writes `out/proof.mp4` and `out/proof-sheet.jpg` with each clip labelled by time and event ids. Look at the sheet and the clips yourself before anyone else does, and check them against `visual-plan.md`: each event does what its beat says, in the place it names. Then look for: text that is cut off, an overlay over a face, a zoom that hides what is used, timing that lands before the word. Fix the events and run `--proof` again; it re-renders only what changed. Report how long each proof took.
 
 ## Final
 
