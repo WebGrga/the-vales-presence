@@ -31,7 +31,7 @@ export function stagePrompt(a) {
   if (stage.out?.length) out.push(section('This stage is done when these files exist', stage.out.map((f) => `- ${f}`).join('\n')));
   if (a.skills?.length) out.push(section('Skills switched on for this stage (read each one before you start)', a.skills.map((s) => `- ${s.name}: ${s.file}${s.about ? ` (${s.about})` : ''}`).join('\n')));
   if (a.missing?.length) out.push(`(Switched on but not found: ${a.missing.join(', ')}.)\n`);
-  out.push(section('House rules (they win over a skill)', [
+  out.push(section("House rules (they win over a skill and over this stage's instructions)", [
     a.houseRulesFile ? `The user's house rules file: ${a.houseRulesFile}${a.houseRulesShipped ? ` (when it does not exist yet, copy ${a.houseRulesShipped} there first, then write lessons in your copy; never edit the shipped one)` : ''}.` : '',
     a.houseRules,
   ].filter(Boolean).join('\n\n')));

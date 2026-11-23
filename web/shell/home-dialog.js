@@ -15,7 +15,7 @@ export function ask({ title, body = [], ok = 'OK', danger = false, focus = null,
     const submit = () => { const bad = check?.(); if (bad) { err.textContent = bad; err.hidden = false; return; } end(true); };
     const key = (e) => {
       if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); end(false); }
-      else if (e.key === 'Enter' && e.target?.tagName === 'INPUT' && e.target.type === 'text') { e.preventDefault(); submit(); }
+      else if (e.key === 'Enter' && e.target?.tagName === 'INPUT' && e.target.type === 'text' && !e.target.closest('[data-no-enter]')) { e.preventDefault(); submit(); }
     };
     addEventListener('keydown', key, true);
     yes.addEventListener('click', submit); no.addEventListener('click', () => end(false));

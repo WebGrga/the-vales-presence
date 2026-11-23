@@ -148,6 +148,12 @@ button.home-pin.on, button.home-pin.on:hover:not(:disabled) { box-shadow: none; 
 .re-who.re-y { background: var(--orange); color: var(--outline); }
 .re-field { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--tan); }
 .re-field input { width: 100%; }
+.re-add { display: flex; gap: 8px; align-items: center; }
+.re-step { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; background: var(--dbrown); }
+.re-step[hidden] { display: none; }
+.re-step textarea, .re-step select { width: 100%; box-sizing: border-box; }
+.re-step-msg { margin: 0; font-size: 12px; color: var(--lred); }
+.re-step-btns { display: flex; gap: 8px; justify-content: flex-end; }
 .re-bad { display: none; padding: 6px 10px; background: var(--dbrown); box-shadow: inset 4px 0 0 var(--red); font-size: 13px; }
 .re-bad.on { display: block; }
 .re-bad p { margin: 0 0 3px; }

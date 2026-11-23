@@ -23,7 +23,7 @@ export function cardOf(r, { stats, mine, usedBy, root }) {
   return {
     id: r.id, name: r.name, about: r.about || '', format: r.format || '', mine, from: r.from || null, usedBy,
     icon: c.icon || ICON[r.format] || 'film',
-    stages: r.stages.map((s) => ({ id: s.id, title: s.title || s.id, kind: s.kind, who: isAgent(s.kind) ? 'agent' : 'you', heavy: !!s.heavy, lock: !!(s.lock && s.lock.length) })),
+    stages: r.stages.map((s) => ({ id: s.id, title: s.title || s.id, kind: s.kind, who: isAgent(s.kind) ? 'agent' : 'you', heavy: !!s.heavy, lock: !!(s.lock && s.lock.length), ...(s.custom ? { custom: true, focus: s.focus || '', out: s.out || [] } : {}) })),
     // the lines of the card: hand-written for a shipped recipe, else the stage titles of the changed list
     lines: [
       c.bring ? { label: 'You bring', text: c.bring } : null,
@@ -45,7 +45,7 @@ function build(ctx, b) {
   const root = src.from && all[src.from] ? all[src.from] : src;
   const pool = [...root.stages, ...src.stages.filter((s) => !root.stages.some((x) => x.id === s.id))];
   const id = editing || recipeId(b.name, Object.keys(all));
-  const stages = buildStages(b.stages, pool);
+  const stages = buildStages(b.stages, pool, Object.values(all).filter((r) => !isMine(ctx, r.id)).flatMap((r) => r.stages.map((s) => s.id)));
   const recipe = savedRecipe({ id, name: b.name, about: `Your own version of "${root.name}", with ${stages.length} stage${stages.length === 1 ? '' : 's'}.`, from: root.id, base: root, stages });
   const errors = validate(recipe, craft.kinds(), { taken: Object.keys(all), editing });
   return { recipe, errors, editing };

@@ -1,12 +1,12 @@
 # House rules
 
-The book this studio learns from. Every agent stage reads it before it starts work. Where a rule here and a skill disagree, the rule wins, unless a video shows the rule is wrong: then the agent says so and fixes the rule.
+The book this studio learns from. Every agent stage reads it before it starts work. Where a rule here and a skill (or the instructions of a stage) disagree, the rule wins, unless a video shows the rule is wrong: then the agent says so and fixes the rule.
 
 You can change any of it in the Context tab. Your version is kept in your data folder; this shipped copy stays as it is, and "Reset to default" brings it back.
 
 ## How we cut
 
-*Your taste, in your own words. How tight you like the talk, what a pause is for, how many zooms are too many, what the captions look like. Write one rule per list item. The agent follows these on every video. Empty means the skills decide.*
+*Your taste, in your own words. How tight you like the talk, what a pause is for, how many zooms are too many, what the captions look like. Write one rule per list item. The agent follows these on every video, and when you tell it something that holds for every video ("never use captions on long-form") it writes the rule here itself and says so. Empty means the skills decide.*
 
 ## Tools we use
 

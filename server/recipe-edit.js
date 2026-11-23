@@ -15,13 +15,41 @@ export function recipeId(name, taken = []) {
   for (let n = 2; ; n++) if (!t.has(`${base}-${n}`)) return `${base}-${n}`;
 }
 
+// pure: a step you write yourself. kind: 'make' (an agent step) or 'gate' (you check it); anything else becomes 'make'.
+// `focus` is what the agent is told to do (the runner puts it in the stage prompt under "This stage"), `out` the files it
+// must leave (one per line or an array). -> { id, kind, title, focus, out?, custom: true }
+export const CUSTOM_KINDS = ['make', 'gate'];
+export const MAX_FOCUS = 4000;
+export function customStage(want, taken = []) {
+  const title = String(want?.title || '').trim().slice(0, 60);
+  const kind = CUSTOM_KINDS.includes(want?.kind) ? want.kind : 'make';
+  const focus = String(want?.focus || '').trim().slice(0, MAX_FOCUS);
+  const files = (Array.isArray(want?.out) ? want.out : String(want?.out || '').split(/[\r\n,]+/)).map((f) => String(f).trim().replace(/\\/g, '/')).filter(Boolean).slice(0, 12);
+  // a step you saved before keeps its id (unless a shipped stage or another step of the list has it now)
+  const keep = ID.test(String(want?.id || '')) && !taken.includes(want.id);
+  const s = { id: keep ? want.id : recipeId(title || 'my step', taken).replace(/^my-recipe$/, 'my-step'), kind, title, focus, custom: true };
+  if (kind === 'make' && files.length) s.out = files;
+  return s;
+}
+
 // pure: the stages of a new recipe from a list of { id, title? }, taking each stage's definition from `pool` (the
 // stages of the recipe it was copied from). A `back` that no longer points at an earlier stage is dropped (the send-back
 // then goes to the nearest agent stage before it, as stages.js does). Unknown ids are reported by validate().
-export function buildStages(list, pool) {
+// An entry with `custom: true` is a step you wrote ({ title, kind, focus, out }): it gets an id from its title that no
+// other stage of the list, the pool or `reserved` (every shipped stage id) uses. A gate you wrote has no lock.
+export function buildStages(list, pool, reserved = []) {
   const defs = new Map((pool || []).map((s) => [s.id, s]));
+  const wanted = Array.isArray(list) ? list : [];
+  const fixed = new Set([...reserved, ...wanted.filter((w) => !w?.custom).map((w) => String(w?.id || ''))]);
   const out = [];
-  for (const want of Array.isArray(list) ? list : []) {
+  for (const want of wanted) {
+    if (want?.custom) {
+      // a step saved before keeps its id; a new one takes one that nothing else uses (nor the pool, nor a saved step later in the list)
+      const blocked = new Set([...fixed, ...out.map((o) => o.id)]);
+      if (!want.id) for (const k of [...defs.keys(), ...wanted.filter((w) => w?.custom && w.id).map((w) => w.id)]) blocked.add(k);
+      out.push(customStage(want, [...blocked]));
+      continue;
+    }
     const id = String(want?.id || '');
     const def = defs.get(id);
     const s = def ? JSON.parse(JSON.stringify(def)) : { id, kind: String(want?.kind || '') };
@@ -50,6 +78,10 @@ export function validate(recipe, kinds, { taken = [], editing = null } = {}) {
     if (!ID.test(String(s.id || ''))) { bad.push(`Stage ${i + 1} has no usable id.`); return; }
     if (seen.has(s.id)) bad.push(`The stage ${label} is in the recipe twice.`);
     seen.add(s.id);
+    if (s.custom) {
+      if (!String(s.title || '').trim()) bad.push(`Step ${i + 1} needs a title.`);
+      if (!String(s.focus || '').trim()) bad.push(`The step ${label} needs words for the agent: what it should do.`);
+    }
     if (!kinds?.[s.kind]) { bad.push(`The stage ${label} has an unknown kind (${s.kind || 'none'}).`); return; }
     const before = stages.slice(0, i);
     if ((s.kind === 'gate' || s.kind === 'options') && !before.some((b) => isAgent(b.kind))) {

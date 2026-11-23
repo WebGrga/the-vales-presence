@@ -15,6 +15,7 @@ import { keepExisting } from './stage-keep.js';
 import { createLive, outState, withBack } from './run-live.js';
 import { ITEMS_FILE } from './review-items.js';
 import { createExtras } from './run-extra.js';
+import { addedRules, rulesNotice } from './context/rules-diff.js';
 
 const readText = (f) => { try { return fs.readFileSync(f, 'utf8'); } catch { return ''; } };
 const readJsonOr = (f, d = null) => { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch { return d; } };
@@ -92,6 +93,9 @@ export function createRunner(ctx) {
 
   // the user's own house rules file, made from the shipped starter once (the context room's helper), so the agent's
   // first lesson goes there and never into craft/
+  // the user's house rules as a stage began: what the agent adds during the stage is told to the user when it ends
+  const rulesAtStart = new Map();
+  const rulesFile = () => path.join(ctx.dataDir, 'craft', 'house-rules.md');
   let rulesHelper;
   async function ensureHouseRules() {
     try {
@@ -143,6 +147,7 @@ export function createRunner(ctx) {
     }
     if (await lockCheck(id, 'before')) return { halted: true };
     await ensureHouseRules();
+    rulesAtStart.set(id, readText(rulesFile()));
     const fresh = load(id);
     const prompt = promptFor(fresh.p, r, st, dir);
     const b = St.begin(fresh.p, r);
@@ -176,6 +181,7 @@ export function createRunner(ctx) {
 
   async function afterTurn(id, st, res, started) {
     const { r, dir } = load(id);
+    if (rulesAtStart.has(id)) { const note = rulesNotice(addedRules(rulesAtStart.get(id), readText(rulesFile()))); rulesAtStart.delete(id); if (note) toast(note, 'info', id); }
     // the turn's cost and time count even when a lock halts it
     let halted = null;
     if (!res.error && !res.stopped) halted = await lockCheck(id, 'after');
