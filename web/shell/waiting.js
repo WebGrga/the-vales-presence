@@ -45,6 +45,7 @@ export function createWaiting(app) {
     } catch {}
   }
   app.on('agent', (m) => { if (m.project && m.project !== pid) return; set(askingAfter(asking, m), true); });
+  app.on('socket', (m) => { if (m.up && m.again && pid) select(pid); }); // the link came back: ask the server again
   // the server's view says it too (view.waiting.for === 'question') once the project is read again
   app.on('project-view', () => { const p = app.project?.(); if (p?.id === pid && p.view && 'waiting' in p.view) set(askingFromView(p.view.waiting), false); });
   return { select, get asking() { return asking; }, get since() { return since; }, recheck: () => select(pid) };

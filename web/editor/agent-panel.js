@@ -169,10 +169,17 @@ export function createAgentPanel(app, projectId) {
     try { await app.api(`/api/projects/${enc(projectId)}/stop`, {}); } catch (e) { app.toast('Stop: ' + e.message, 'error'); }
   }
 
-  // what was said before this page opened, then live
-  (async () => {
+  // what was said before this page opened, then live. It is read again when the link comes back after a break (the server
+  // restarted, the page slept): what the agent said meanwhile is in the server's record, and the panel's own state (working,
+  // waiting for an answer) is the server's, not what this page last heard. Live messages that come while it reads are
+  // left out: the record has them.
+  let loading = false, loadedAt = 0;
+  async function loadHistory() {
+    if (loading) return;
+    loading = true;
     try {
       const s = await app.api(`/api/projects/${enc(projectId)}/agent`);
+      log.replaceChildren(); text = null; tools.clear(); fires.clear(); bashDesc.clear(); cards.length = 0; askToolId = null; asking = false;
       const openKey = s?.question ? questionKey(s.question.questions || []) : null;
       const events = s?.events || [];
       const lastQ = events.map((m) => m.event).lastIndexOf('question');
@@ -181,12 +188,16 @@ export function createAgentPanel(app, projectId) {
       if (asking && !cards.some((c) => c.live)) { const c = createQuestionCard({ app, projectId, questions: s.question.questions || [], open: true }); cards.push(c); add(c.el); }
       setBusy(!!s?.busy && !asking, !!s?.asleep);
       log.scrollTop = log.scrollHeight;
-    } catch { setBusy(false); }
+      loadedAt = Date.now();
+    } catch { if (!loadedAt) setBusy(false); }
+    loading = false;
     if (!log.children.length) add(h('p.dim.ag-empty', 'The agent’s work shows here as it happens. Ask it anything below.'));
-  })();
+  }
+  loadHistory();
   const offs = [
-    app.on('agent', (m) => { if (m.project === projectId) { log.querySelector('.ag-empty')?.remove(); show(m, true); } }),
-    app.on('fire', (m) => { if (m.project === projectId) fire(m); }),
+    app.on('agent', (m) => { if (m.project === projectId && !loading) { log.querySelector('.ag-empty')?.remove(); show(m, true); } }),
+    app.on('fire', (m) => { if (m.project === projectId && !loading) fire(m); }),
+    app.on('socket', (m) => { if (m.up && m.again) loadHistory(); }),
     app.on('focus-question', () => { const c = [...cards].reverse().find((x) => x.live); setTimeout(() => (c ? c.focus() : box.focus()), 80); }),
   ];
   paintState();

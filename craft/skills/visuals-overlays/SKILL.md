@@ -20,6 +20,16 @@ Open `out/visual-plan.md`. When it is missing, write it first with the visuals-p
 - The house rules and the brief: what the user likes on screen and what the video must show.
 - **The user's own edits, which win over yours:** `out/redactions.json` (blur boxes the user drew in the viewer) and `out/event-edits.json` (overlays the user changed in the inspector: words, props, timing, hidden). The engine applies both on every check, proof and final; you never copy them into events.json. Read them before a round so you know what the user already fixed. To take one of their edits over into your plan, put it in `make_overlays.py` and tell the user; do not delete their files.
 
+## Sample one beat first when the look is not settled
+
+When the house rules, the brief and the user's own words do not settle the look (or could mean more than one look), do not dress the whole video first. Dress the one typical beat the plan picked:
+
+1. Write `out/work/make_overlays.py` with only that beat's events (no captions, so the proof holds just that window; no other beats yet). Use the ids the beat will keep, so that after a yes the window is cached and not drawn again.
+2. Run `python $ENGINE/run.py --proof` (background). The proof then holds only that window: `video/out/proof.mp4` (and `video/out/proof-sheet.jpg`). Watch it yourself first and fix what is plainly wrong.
+3. Ask with the AskUserQuestion tool, one question with the clip's path in its text so the card plays it, for example: "Beat 3, 02:41 to 02:52: video/out/proof.mp4. Is this the look?" with the options "This is it" and "Try a different way" (they can write what to change).
+4. "This is it": add every other beat's events to the same script and carry on with the proof and the final below. "Try a different way": change only that beat from what they said, run `--proof` again, ask again.
+5. Their words about the look are saved into the house rules as they said them, never as your expansion.
+
 ## Write events.json
 
 Write the plan as a script, `out/work/make_overlays.py`, so a note changes a line and runs again:

@@ -58,5 +58,6 @@ export function mount(host, app) {
     } catch (e) { list.replaceChildren(); empty.textContent = `The log did not load: ${e.message}`; empty.hidden = false; }
   }
   app.on('agent', (m) => { if (m.project === pid) add(m, Date.now()); });
+  app.on('socket', (m) => { if (m.up && m.again && pid) refresh(); }); // the link came back: what it missed is in the record
   return { refresh };
 }

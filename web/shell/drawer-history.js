@@ -49,5 +49,6 @@ export function mount(host, app) {
   let t = null;
   const soon = () => { clearTimeout(t); t = setTimeout(() => { if (host.closest('.drawer.in') && !host.hidden) refresh(); }, 600); };
   app.on('project', soon); app.on('agent', (m) => { if (m.event === 'done') soon(); });
+  app.on('socket', (m) => { if (m.up && m.again) soon(); });
   return { refresh };
 }

@@ -4,10 +4,13 @@
 // The rules are in agent-ask.js.
 import { h, icon, button } from '../shell/dom.js';
 import { createDraft } from '../shell/drafts.js';
+import { mediaUrl } from '../shell/api.js';
+import { questionMedia } from './agent-media.js';
 import { questionKey, toggle, setOwn, answersOf, sendLabel, progress, labelOf, isMulti } from './agent-ask.js';
 
 // createQuestionCard({ app, projectId, questions, open }) -> { el, key, close(word), focus() }
 export function createQuestionCard({ app, projectId, questions, open = true }) {
+  const stamp = Date.now(); // a proof is made again under the same name: the browser must not show the old one
   const enc = encodeURIComponent;
   const key = questionKey(questions);
   const draft = createDraft(projectId, 'ask:' + key);
@@ -24,6 +27,22 @@ export function createQuestionCard({ app, projectId, questions, open = true }) {
   const el = h('div.ag-question', { 'data-key': key }, head, ...parts.map((p) => p.el), foot, status);
   if (!questions.length) el.append(h('p', 'The agent asked something: answer in the box below.'));
 
+  // the example the question points at (a video or a picture of the project): shown right under the question
+  function media(q) {
+    const items = questionMedia(q, projectId);
+    if (!items.length) return null;
+    return h('div.ag-q-media', ...items.map((m) => {
+      const src = `${mediaUrl(projectId, m.path)}?v=${stamp}`;
+      const gone = () => fig.replaceWith(h('p.dim.ag-q-gone', `${m.path} is not there (yet).`));
+      const node = m.kind === 'video'
+        ? h('video', { src, controls: true, preload: 'metadata', playsInline: true, title: m.path })
+        : h('a', { href: src, target: '_blank', rel: 'noopener', title: `${m.path} (open it full size)` }, h('img', { src, alt: m.path }));
+      (m.kind === 'video' ? node : node.firstChild).addEventListener('error', () => gone());
+      const fig = h('figure.ag-q-fig', node, h('figcaption.dim', m.path));
+      return fig;
+    }));
+  }
+
   function part(q, i) {
     const multi = isMulti(q);
     const opts = (q.options || []).map((o) => {
@@ -38,6 +57,7 @@ export function createQuestionCard({ app, projectId, questions, open = true }) {
     own.addEventListener('input', () => { state = setOwn(state, i, own.value); save(); paintSend(); grow(own); });
     own.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); send(); } });
     const el = h('fieldset.ag-q-part', h('legend', h('span.ag-q-n', `${i + 1}`), h('span', q.header ? `${q.header}: ` : '', q.question || '')),
+      media(q),
       multi ? h('p.dim.ag-q-multi', 'Pick any that fit') : null,
       opts.length ? h('div.ag-options' + (multi ? '.multi' : ''), { role: multi ? 'group' : 'radiogroup' }, ...opts.map((o) => o.b)) : null, own);
     return { el, opts, own, i };

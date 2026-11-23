@@ -221,6 +221,11 @@ button.tc:hover:not(:disabled) { background: rgba(232, 197, 71, 0.28); }
 .ag-q-part legend { display: flex; gap: 6px; align-items: baseline; padding: 0; margin-bottom: 2px; font-weight: 600; font-size: 13px; color: var(--ink); }
 .ag-q-n { flex: none; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; background: var(--tan); color: var(--outline); }
 .ag-q-part.done .ag-q-n { background: var(--green); color: var(--cream); }
+.ag-q-media { display: flex; flex-direction: column; gap: 6px; margin: 2px 0 4px 24px; }
+.ag-q-fig { margin: 0; display: flex; flex-direction: column; gap: 2px; }
+.ag-q-fig video, .ag-q-fig img { display: block; max-width: 100%; max-height: 200px; background: var(--outline); box-shadow: inset 0 0 0 1px var(--tan); }
+.ag-q-fig figcaption { font-size: 11px; overflow-wrap: anywhere; }
+.ag-q-gone { margin: 0; font-size: 12px; }
 .ag-q-multi { margin: -2px 0 0 24px; font-size: 11px; color: var(--brown); }
 .ag-options { display: flex; flex-direction: column; gap: 3px; margin-left: 24px; }
 button.ag-opt {

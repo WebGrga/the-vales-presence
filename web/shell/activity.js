@@ -92,6 +92,8 @@ export function mountActivity(host, app, topBar) {
     if (next !== st) { st = next; draw(); paintBadge(); }
   };
   for (const t of ['agent', 'progress', 'live', 'queue', 'fire']) app.on(t, feed);
+  // the project's view was read again (the link came back, a stage changed): the strip takes what the server says now
+  app.on('project-view', () => { const p = app.project(); if (p?.view) feed({ type: 'live', project: p.id, view: p.view }); });
   app.on('select', () => load());
   app.on('waiting', () => { st = { ...st, asking: !!app.waiting?.asking }; draw(); });
   app.on('socket', (m) => { if (m.up) load(); });

@@ -73,6 +73,13 @@ sock.on('project', (msg) => {
   picker.update(current);
   clearTimeout(again); again = setTimeout(refresh, 150);
 });
+// the live view (what the stage bar needs beyond project.json: the actions it allows, the line it waits in, a question,
+// a sleeping stage) comes with every { type: 'live' }: take it at once, so the buttons and chips follow the agent without a reload
+sock.on('live', (msg) => {
+  if (!current || msg.project !== current.id || !msg.view) return;
+  current = { ...current, view: msg.view };
+  sock.emit('project-view', { type: 'project-view', project: current.id });
+});
 sock.on('toast', (msg) => toast(msg.text, msg.kind));
 sock.on('socket', (m) => {
   live.classList.toggle('up', m.up);

@@ -31,6 +31,7 @@ export function mount(host, app) {
   }
   const soon = () => { clearTimeout(timer); timer = setTimeout(() => { if (host.closest('.drawer.in') && !host.hidden) refresh(); }, 400); };
   app.on('queue', soon); app.on('live', soon); app.on('project', soon);
+  app.on('socket', (m) => { if (m.up && m.again) soon(); });
   setInterval(() => { if (host.closest('.drawer.in') && !host.hidden) refresh(); }, 5000);
   return { refresh };
 }

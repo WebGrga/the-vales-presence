@@ -23,6 +23,10 @@ The first question is never "what overlay goes here". It is "what does the viewe
    - **Nothing**: when the screen already shows it. Say so in the plan; a quiet beat is a decision.
 5. Give every chosen piece its exact box or position, its start on the word it belongs to, and its end.
 
+## When the look is not settled: sample one beat first
+
+If the house rules, the brief and the user's own words do not settle what the visuals should look like (or their words could mean more than one look: "constantly something happening", "punchy", "clean"), do not plan and dress the whole video on a guess. Write the plan for the whole video as below, then pick the **one beat** that is most typical of the video (a middle beat that needs a real visual, not the opening or a quiet one) and make only that sample, with the visuals-overlays skill's sample step: its events alone in `events.json`, `python $ENGINE/run.py --proof`, the clip at `video/out/proof.mp4`. Then ask with the AskUserQuestion tool, one question that names the clip, for example: "I dressed the beat at 02:41 with a Callout on the judges' box: video/out/proof.mp4. Is this the look?", with the options "This is it" and "Try a different way". The question card plays the clip. Only after "This is it" do the other beats. After "Try a different way", change that one beat from what they said and ask again. Their words about the look go into the house rules exactly as they said them, never as your expansion of them.
+
 ## Rules
 
 - A label never repeats the spoken words. If the speaker says "the judges score it", the callout on the judges' box does not say "JUDGES". It may say "3 judges, 0 to 10" or "Judge 2: 4/10".
