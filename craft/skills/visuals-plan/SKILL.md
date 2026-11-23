@@ -17,21 +17,21 @@ The first question is never "what overlay goes here". It is "what does the viewe
    - **Explain it**: `Flow` (how it works, how it was built), `Steps` (a list ticked as it is said).
    - **Count it**: `Stat` (one number said or shown), `Scoreboard` (matches, races, A/B tests).
    - **Compare it**: `Compare` (before/after, A vs B), `Inset` of an earlier moment or a detail next to the live screen.
-   - **Name it**: a pop word that adds what the speech does not make obvious: the name of the thing, the number, the verdict.
-   - **React**: a stamp or a rare emoji tied to this one moment (a win, a fail, a surprise).
+   - **Name it**: the name, number or verdict as the label of something shown (a callout on the thing, a node, a scoreboard row), never as a word floating on its own.
+   - **React**: a sound effect, or a ring or spotlight on the moment (a win, a fail, a surprise).
    - **Zoom**: only to make a small detail readable.
    - **Nothing**: when the screen already shows it. Say so in the plan; a quiet beat is a decision.
 5. Give every chosen piece its exact box or position, its start on the word it belongs to, and its end.
 
 ## Rules
 
-- A pop word never repeats the spoken words. If the speaker says "the judges score it", the word is not "JUDGES". It may be "3 judges, 0 to 10" or "Judge 2: 4/10".
-- Emoji: about one a minute at most, unless the house rules ask for more, each tied to a moment. Never a filler, never a decoration beside a word.
+- A label never repeats the spoken words. If the speaker says "the judges score it", the callout on the judges' box does not say "JUDGES". It may say "3 judges, 0 to 10" or "Judge 2: 4/10".
+- No emoji, and no lone text (pop-in words, stamps, title words on their own): they read as filler. Text appears only as part of something shown. Only the house rules can ask for them.
 - Never the same component three beats in a row. Mix points, explains, counts and quiet beats.
 - Positions on a screen recording come from a still at that time, never from a guess. If the thing moves, plan one box per stretch.
 - Keep clear of the face cam and of what the speaker is showing.
-- **House rules win.** If they ask for a long video dressed over the top (something always happening, pop-in words, emoji, rings, stamps, scoreboards, sound), do it: their pace is the ceiling and the "something is always happening" floor. Fill that pace from this plan with more beats of real things to point at, count and name, never with fillers. Over the top is fine when every piece belongs.
-- When a stretch has nothing real to show and the house rules want something moving, use a small reaction, a sound or a slow zoom on the speaker, not an echo word.
+- **House rules win.** If they ask for a long video dressed over the top (something always happening), do it: their pace is the ceiling and the "something is always happening" floor. Fill that pace from this plan with more beats of real things to point at, count and name, never with fillers. Over the top is fine when every piece belongs.
+- When a stretch has nothing real to show and the house rules want something moving, use a sound, a ring on what the screen already shows, or a slow zoom on the speaker, never a word.
 
 ## Format
 
@@ -58,4 +58,4 @@ That echoes the speech, points at nothing and tells the viewer nothing new. Othe
 
 ## Check before you place events
 
-Read the finished plan once as a viewer. Does each beat get a different kind of help? Does any pop word repeat the speech? Is any emoji unattached? Is the face cam free? Then hand the plan to the visuals-overlays skill. When a note moves a beat, change its entry in `visual-plan.md` too.
+Read the finished plan once as a viewer. Does each beat get a different kind of help? Does any label repeat the speech? Is there any emoji or lone text? Is the face cam free? Then hand the plan to the visuals-overlays skill. When a note moves a beat, change its entry in `visual-plan.md` too.

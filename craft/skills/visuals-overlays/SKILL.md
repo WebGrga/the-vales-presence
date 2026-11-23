@@ -9,7 +9,7 @@ The rough is locked. Visuals sit on top of it and never change a word of the tal
 
 ## Start from the plan
 
-Open `out/visual-plan.md`. When it is missing, write it first with the visuals-plan skill. Every event below comes from a beat in it, and an event with no beat does not go in. The pace in the house rules is filled from the plan, never with echo words or filler emoji.
+Open `out/visual-plan.md`. When it is missing, write it first with the visuals-plan skill. Every event below comes from a beat in it, and an event with no beat does not go in. The pace in the house rules is filled from the plan, never with echo words, lone text or emoji.
 
 ## What you have
 
