@@ -6,6 +6,7 @@ import React from "react";
 import { interpolate, useCurrentFrame, useVideoConfig, Easing } from "remotion";
 import { KIT, FONT, clamp } from "./pipeline/shorts";
 import type { Ev } from "./pipeline/types";
+import { SHOW } from "./show";
 
 const INK = "#14161c";
 const PAPER = "#fbfbf8";
@@ -53,4 +54,4 @@ const Strokes: React.FC<{ ev: Ev }> = ({ ev }) => {
   );
 };
 
-export const COMPONENTS: Record<string, React.FC<{ ev: Ev }>> = { Card, Strokes, Marker: KIT.Marker };
+export const COMPONENTS: Record<string, React.FC<{ ev: Ev }>> = { ...SHOW, Card, Strokes, Marker: KIT.Marker };

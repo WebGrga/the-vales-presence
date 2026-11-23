@@ -7,6 +7,7 @@ A long video (1920x1080) dressed lightly: lower-third labels, a chapter card, a 
 | `components.tsx` | `video/remotion/src/components.tsx` | `Label`, `Chapter`, `Bars`, `Picture`, `End` |
 | `make_overlays.py` | `video/out/work/make_overlays.py` | the visuals as events: `video/out/events.json` and `timeline.json` |
 | `punches.json` | `video/out/work/punches.json` | punch-ins: 1.5x crops eased in and out by ffmpeg, never rendered |
+| `show.tsx` | `video/remotion/src/show.tsx` | copy of `kit/show/show.tsx`: `Callout`, `Spotlight`, `Inset`, `Flow`, `Compare`, `Stat`, `Steps`, `Scoreboard` (see `kit/show/README.md`); `components.tsx` imports it |
 
 ## Run
 

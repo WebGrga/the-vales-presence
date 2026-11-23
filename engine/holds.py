@@ -70,7 +70,8 @@ def params_of(e, table):
 
 # ---------------------------------------------------------------------------------------------------------------- the plan
 
-TIME_KEYS = ('at', 't', 'time', 'start', 'end', 'press', 'after', 'delay')
+TIME_KEYS = ('at', 'at2', 't', 'time', 'start', 'end', 'press', 'after', 'delay')
+PAIR_KEYS = ('score', 'env')      # [[time, value], ...]: the first number of each pair is a moment (the show kit's Scoreboard)
 
 
 def _numbers(x, out, key=None, rel=(), at=0.0):
@@ -85,6 +86,9 @@ def _numbers(x, out, key=None, rel=(), at=0.0):
         for k, v in x.items():
             _numbers(v, out, k, rel, at)
     elif isinstance(x, (list, tuple)):
+        if key in PAIR_KEYS and len(x) == 2 and all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in x):
+            out.append(float(x[0]))
+            return
         for v in x:
             _numbers(v, out, key, rel, at)
 

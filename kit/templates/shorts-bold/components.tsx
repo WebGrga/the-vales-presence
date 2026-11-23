@@ -6,6 +6,7 @@ import React from "react";
 import { interpolate, spring } from "remotion";
 import { KIT, FONT, COL, SHADOW, useClock, easeIn } from "./pipeline/shorts";
 import type { Ev } from "./pipeline/types";
+import { SHOW } from "./show";
 
 /** A big number with a short label under it, in the top band: the number springs in, the label follows.
  *  props: {value: "3x", label: "FASTER", top (160), color ("y"), size (220)} */
@@ -22,4 +23,4 @@ const Stat: React.FC<{ ev: Ev }> = ({ ev }) => {
   );
 };
 
-export const COMPONENTS: Record<string, React.FC<{ ev: Ev }>> = { ...KIT, Stat };
+export const COMPONENTS: Record<string, React.FC<{ ev: Ev }>> = { ...SHOW, ...KIT, Stat, Count: SHOW.Stat }; // Stat here is the big text number; the counting-up one of the show kit is Count

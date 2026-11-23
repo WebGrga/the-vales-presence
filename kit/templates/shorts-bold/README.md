@@ -7,6 +7,7 @@ A vertical Short (1080x1920) with a strong top band: a hook on frame 0, a label 
 | `components.tsx` | `video/remotion/src/components.tsx` | the engine's Shorts kit (`Band`, `Label`, `Pops`, `EndText`, `Box`, `Marker`, `Underline`, `Tag`, `Chips`, `Scrim`, `Flash`) plus `Stat`, a big number with a label |
 | `make_overlays.py` | `video/out/work/make_overlays.py` | the visuals as events: `video/out/events.json` and `timeline.json` |
 | `stills.json` | `video/remotion/stills.json` | how long `Stat` takes to settle, so its still stretches are held instead of drawn |
+| `show.tsx` | `video/remotion/src/show.tsx` | copy of `kit/show/show.tsx`: `Callout`, `Spotlight`, `Inset`, `Flow`, `Compare`, `Count` (counting number), `Steps`, `Scoreboard` (see `kit/show/README.md`); `components.tsx` imports it |
 
 ## Run
 

@@ -1,5 +1,6 @@
 // longform-clean: the overlay pieces of a long video (1920x1080). A transparent layer with no base video: the engine renders only the
 // stretches where one of these is on screen. Punch-ins (ffmpeg) and captions (ASS) are not drawn here.
+// Pieces of the show kit (./show, copied from kit/show/show.tsx): Callout, Spotlight, Inset, Flow, Compare, Stat, Steps, Scoreboard.
 // Pieces: Label (a lower-third card), Chapter (a numbered title card), Bars (a bar chart with values), Picture (an image from
 // remotion/public with rings drawn round parts of it), End (two slots for the end-screen elements).
 // ev.at / ev.end are seconds of the rough; ev.props is what make_overlays.py put in the event.
@@ -7,6 +8,7 @@ import React from "react";
 import { AbsoluteFill, Img, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig, Easing } from "remotion";
 import { loadFont } from "@remotion/google-fonts/Montserrat";
 import type { Ev } from "./pipeline/types";
+import { SHOW } from "./show";
 
 const SANS = loadFont("normal", { weights: ["600", "800", "900"], subsets: ["latin"] }).fontFamily;
 export const C = { paper: "#fbfbf8", ink: "#14161c", accent: "#4f8cff", warm: "#ffb547", red: "#ff5a4f", dim: "rgba(10,12,16,0.82)" };
@@ -136,4 +138,4 @@ const End: React.FC<{ ev: Ev }> = ({ ev }) => {
 };
 
 // the registry the engine's Layer draws from: events.json "comp" names
-export const COMPONENTS: Record<string, React.FC<{ ev: Ev }>> = { Label, Chapter, Bars, Picture, End };
+export const COMPONENTS: Record<string, React.FC<{ ev: Ev }>> = { ...SHOW, Label, Chapter, Bars, Picture, End };

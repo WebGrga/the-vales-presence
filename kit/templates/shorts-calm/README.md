@@ -6,6 +6,7 @@ A calm vertical Short (1080x1920): a light title card that types on, one label c
 |---|---|---|
 | `components.tsx` | `video/remotion/src/components.tsx` | `Card` (title or label), `Strokes` (underlines that draw in), and the kit's `Marker` |
 | `make_overlays.py` | `video/out/work/make_overlays.py` | the visuals as events: `video/out/events.json` and `timeline.json` |
+| `show.tsx` | `video/remotion/src/show.tsx` | copy of `kit/show/show.tsx`: `Callout`, `Spotlight`, `Inset`, `Flow`, `Compare`, `Stat`, `Steps`, `Scoreboard` (see `kit/show/README.md`); `components.tsx` imports it |
 
 ## Run
 

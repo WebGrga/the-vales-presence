@@ -46,6 +46,10 @@ def check(tdir):
         if n.endswith(('.ts', '.tsx')) and n not in ('Root.tsx', 'index.ts', 'theme.ts') or n == 'theme.ts':
             shutil.copy2(os.path.join(tdir, n), os.path.join(src, n))
             n_files += 1
+    shared = os.path.join(os.path.dirname(os.path.abspath(tdir)), '..', 'show', 'show.tsx')   # kit/show/show.tsx: a template's components import ./show
+    if os.path.isfile(shared) and not os.path.isfile(os.path.join(src, 'show.tsx')):
+        shutil.copy2(shared, os.path.join(src, 'show.tsx'))
+        n_files += 1
     if not os.path.isfile(os.path.join(src, 'components.tsx')):
         print(f'{name}: no components.tsx')
         return 1

@@ -53,6 +53,13 @@ class PlanTests(unittest.TestCase):
         holds_ = [(s['a'] / FPS, s['b'] / FPS) for s in st if s['kind'] == 'hold']
         self.assertTrue(any(a < 15 < b for a, b in holds_), holds_)          # the box's whole numbers are not moments
 
+    def test_show_kit_times_are_moments(self):
+        # Compare's at2 and Scoreboard's [[at, value], ...] with whole seconds are moments, a pixel box is not
+        e = ev('S', 10.0, 40.0, 'Scoreboard', props={'at2': 20, 'rows': [{'name': 'A', 'score': [[25, 3], [32, 5]]}], 'x': 12, 'y': 30})
+        nums = []
+        holds._numbers(e['props'], nums)
+        self.assertEqual(sorted(nums), [20.0, 25.0, 32.0])
+
     def test_still_false_never_holds(self):
         st = holds.plan_window([ev('R', 10.0, 20.0, still=False)], 570, 1230, FPS, 1, T)
         self.assertEqual([s['kind'] for s in st], ['full'])
